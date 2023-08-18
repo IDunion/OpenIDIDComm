@@ -1,0 +1,53 @@
+@startuml
+title "OID4VC DidComm extension"
+participant Wallet
+participant "Credential Issuer" as CI
+
+autonumber "(0)"
+CI -> Wallet: Metadata
+rnote left of CI #FFFFFF
+{
+    credentials_supported: [{
+        "id": "UniverseityDegree_JWT",
+        "credential_definition": {
+            "name": {...},
+            "degree: {...}
+        },
+        <color green>"didcomm_required":"REQUIRED"</color>
+    },
+    {...}]
+}
+end rnote
+...
+Wallet -> CI: Authorization Request
+rnote right of Wallet #FFFFFF
+GET auth.com/authorize?
+    response_type=code
+    &client_id=...
+    &authorization_details= <requested Credentials>
+    <color green>&nonce=xyz</color>
+    <color green>&did=did:peer:client</color>
+end rnote
+autonumber stop
+...
+group **(3) DIDComm**
+CI -[#green]> Wallet: <color green>Establish Connection, correlation to OID4VC flow with //nonce//</color>
+Wallet -[#green]> CI
+CI -[#green]> Wallet
+end
+...
+autonumber 4 "(0)"
+CI -> Wallet: Authorization Response
+rnote left of CI #FFFFFF
+HTTP/1.1 302 Found
+Location: /cb?code=<auth code>
+
+**OR**
+
+HTTP/1.1 302 Found
+Location: /cb?error=access_denied
+    &error_description=DidComm%20Connection%20
+        unsuccessful
+end rnote
+... **<size:40>...</size>** ...
+@enduml
