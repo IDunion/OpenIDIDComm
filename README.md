@@ -1,7 +1,19 @@
 # Openidcomm
 
+- [Summary](#summary)
+- [OID4VC](#oid4vc-extension)
+    - [In-Stream](#in-stream)
+    - [Down-Stream](#down-stream)
+- [OID4VP](#oid4vp-extension)
+
 ## Summary
 OpenIDComm extends the existing [OpenID for Verifiable Credential Issuance](https://openid.bitbucket.io/connect/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata) and [OpenID for Verifable Presentations](https://openid.bitbucket.io/connect/openid-4-verifiable-presentations-1_0.html) specifications with the feature to create a long term DIDComm connection between both parties. This connection could be used to facilitate issuer/verifier initiated re-issuance or re-verification of credentials.
+
+|        |    Up-Stream   |       In-Stream       |       Down-Stream       |
+|--------|:--------------:|:---------------------:|:-----------------------:|
+| OID4VC |        /       | <span style="color:green">Pro</span>: Enforcement <br> <span style="color:red">Con</span>: Spec. modification | <span style="color:green">Pro</span>: No modification <br> <span style="color:red">Con</span>: No enforcement
+| OID4VP |        /       | <span style="color:green">Pro</span>: Enforcement <br> <span style="color:red">Con</span>: Spec. modification |        /
+
 
 ## OID4VC Extension
 ### In-Stream
