@@ -1,9 +1,10 @@
 # Openidcomm
 
 ## Summary
-OpenIDComm extends the existing [OpenID for Verifiable Credential Issuance](https://openid.bitbucket.io/connect/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata) and [OpenID for Verifable Presentations](https://openid.bitbucket.io/connect/openid-4-verifiable-presentations-1_0.html) specifications with the feature to create a long term DIDComm connection between both parties.
+OpenIDComm extends the existing [OpenID for Verifiable Credential Issuance](https://openid.bitbucket.io/connect/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata) and [OpenID for Verifable Presentations](https://openid.bitbucket.io/connect/openid-4-verifiable-presentations-1_0.html) specifications with the feature to create a long term DIDComm connection between both parties. This connection could be used to facilitate issuer/verifier initiated re-issuance or re-verification of credentials.
 
 ## OID4VC Extension
+### In-Stream
 ![OID4VC Diagram](/Diagramme/eingelagert_4VC.png "OID4VC Extension")
 
 The Credential Issuer Metadata contains a new attribute `didcomm_required` describing if a DIDComm connection is required or optional to obtain the Verified Credential.
@@ -11,6 +12,21 @@ The Credential Issuer Metadata contains a new attribute `didcomm_required` descr
 Within the Authorization Request the Wallet sends a DID that resolves into DID Document containing a DIDComm-Service-Endpoint. The Issuer then creates a DIDComm channel with the given DID. The Issuer also includes the Nonce of the Authorization Request to assign the new DIDComm channel to the OID4VC flow.
 
 If a DIDComm connection is required but could not be established, the Issuer sends back an Authorization Response containing the error `access_denied`. If no DIDComm connection is required or one was established, the Issuer answeres with the usual Authentication Response and continues with the normal OID4VC flow.
+
+### Down-Stream
+In contrast to the previous flow, this variant establishes the connection after the completion of the main OID4VC process.
+
+![OID4VC Diagram](/Diagramme/nachgelagert.png "OID4VC Downstream Extension")
+
+If the issuer-DID is public, no modifications to the OID4VC flow are made in this variant. Otherwise, the issuer would need to add its DID to its metadata.
+
+Regardless, a request for a DIDComm connection is made by the client after the credential has been successfully  issued. This request could contain the issued credential as a verifiable presentation as a way to enable the issuer to verify the client and correlate the connection to the previous issuance.
+
+The issuer then resolves the DID contained in the message's `from:` field and uses the contained service endpoint to respond.
+
+**Pros:** No/Minimal modification of the OID4VC flow needed.
+
+**Cons:** Issuer-side enforcement of connection not possible.
 
 ## OID4VP Extension
 ![OID4VP Diagram](/Diagramme/eingelagert_4VP.png "OID4VP Extension")
