@@ -1,0 +1,47 @@
+@startuml
+title "OID4VP DidComm extension"
+participant Verifier
+participant Wallet
+
+autonumber "(0)"
+Wallet -> Verifier: Metadata
+rnote left of Wallet #FFFFFF
+{
+    ...
+    <color green>"didcomm_required":"REQUIRED"</color>
+    ...
+}
+end rnote
+...
+Verifier -> Wallet: Authorization Request
+rnote right of Verifier #FFFFFF
+GET auth.com/authorize?
+    response_type=code
+    &client_id=...
+    &authorization_details= <requested Credentials>
+    <color green>&nonce=xyz</color>
+    <color green>&did=did:peer:client</color>
+end rnote
+autonumber stop
+...
+group **(3) DIDComm**
+Wallet -[#green]> Verifier: <color green>Establish connection, Correlation to OID4VP flow with //nonce//</color>
+Verifier -[#green]> Wallet
+Wallet -[#green]> Verifier
+end
+...
+autonumber 4 "(0)"
+Wallet -> Verifier: Authorization Response
+rnote left of Wallet #FFFFFF
+HTTP/1.1 302 Found
+Location: /cb?code=<auth code>
+
+**OR**
+
+HTTP/1.1 302 Found
+Location: /cb?error=access_denied
+    &error_description=DidComm%20Connection%20
+        unsuccessful
+end rnote
+... **<size:40>...</size>** ...
+@enduml
