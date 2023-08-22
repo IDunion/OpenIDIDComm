@@ -2,6 +2,7 @@
 
 - [Summary](#summary)
 - [OID4VC](#oid4vc-extension)
+    - [Up-Stream](#up-stream)
     - [In-Stream](#in-stream)
     - [Down-Stream](#down-stream)
 - [OID4VP](#oid4vp-extension)
@@ -11,12 +12,19 @@ OpenIDComm extends the existing [OpenID for Verifiable Credential Issuance](http
 
 |             |    Pros           |       Cons            |       Comments          |
 |-------------|:-----------------:|:---------------------:|:-----------------------:|
-| Up-Stream   |
-| In-Stream   | Conn. enforceable | Spec. modification
-| Down-Stream | No spec. modification   | Conn. not enforceable, <br> Req. public DID
+| Up-Stream   | Conn. enforceable | Spec. modification, <br> Req. public DID | Probably no advantage over In-Stream.
+| In-Stream   | Conn. enforceable | Spec. modification    | /
+| Down-Stream | No spec. modification   | Conn. not enforceable, <br> Req. public DID | /
 
 
 ## OID4VC Extension
+### Up-Stream
+![OID4VC Diagram](/Diagramme/vorgelagert.png "OID4VC Extension")
+
+In this variant, a DidComm connection is established before the start of the corresponding OID4VC process. The client sends request and receives a random nonce & metadata with DidComm requirements. Based on this metadata, the client can decide, if it wants to acknowledge or send an error.
+
+Next the previous nonce is used in the OID4VC authorization request to correlate the request. Depending on if the DidComm connection was acknowledged or not, the issuer can then allow/deny access.
+
 ### In-Stream
 ![OID4VC Diagram](/Diagramme/eingelagert_4VC.png "OID4VC Extension")
 
