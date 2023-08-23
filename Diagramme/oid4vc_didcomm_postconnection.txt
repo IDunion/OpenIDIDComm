@@ -1,0 +1,62 @@
+@startuml
+title "OID4VC DidComm extension"
+participant Wallet order 1
+participant "Credential Issuer" as CI order 3
+
+autonumber "(0)"
+CI -> Wallet: Metadata
+
+...
+skinparam responseMessageBelowArrow true
+Wallet -> CI: Authorization Request
+CI -> Wallet: Authorization Response
+
+...
+Wallet -> CI: Token Request
+CI -> Wallet: Token Response
+
+...
+Wallet -> CI: Credentian Request
+CI -> Wallet: Credential Response
+
+==DIDComm==
+
+Wallet -> CI: Propose cred. for correlation
+rnote left of CI #FFFFFF
+{
+   "@type": "propose-presentation",
+   "proposals~attach": [
+       "data": {
+            "json": {<DIF definition>}
+       }
+   ]
+}
+end rnote
+
+create participant Mediator order 2
+CI -> Mediator: Response
+rnote right of Mediator #FFFFFF
+{
+   "@type": "request-presentation",
+   "request_presentations~attach": [
+       "data": {
+            "base64": "<DIF definition>"
+       }
+   ]
+}
+end rnote
+
+Mediator -> Wallet: Response
+Wallet -> CI: Presentation
+rnote left of CI #FFFFFF
+{
+   "@type": "presentation",
+   "presentations~attach": [
+       "data": {
+            "sha256": "<DIF presentation>"
+       }
+   ]
+}
+end rnote
+
+@enduml
