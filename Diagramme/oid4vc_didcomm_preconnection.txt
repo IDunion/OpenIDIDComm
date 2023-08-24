@@ -1,5 +1,6 @@
 @startuml
 !theme vibrant
+!pragma teoz true
 title "OID4VC DidComm extension"
 participant Wallet
 participant Mediator
@@ -21,8 +22,9 @@ DidComm Plaintext Msg.:
   "body": {}
 }
 end rnote
-
+|||
 CI -> Mediator: Response
+& Mediator -> Wallet: Response
 rnote left of CI #FFFFFF
 {
     "type": "forward",
@@ -35,9 +37,7 @@ rnote left of CI #FFFFFF
     ]
 }
 end rnote
-
-Mediator -> Wallet: Response
-rnote left of Mediator #FFFFFF
+& rnote left of Mediator #FFFFFF
 {
   "type": "<some type>”,
   "from": "did:x:mediator",
@@ -48,7 +48,7 @@ rnote left of Mediator #FFFFFF
   }
 }
 end rnote
-
+|||
 alt <color green>Connection accepted</color>
     Wallet -> CI: Acknowledgement
 else <color red>Connection declined</color>

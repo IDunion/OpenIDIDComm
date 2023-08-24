@@ -1,9 +1,12 @@
 @startuml
 !theme vibrant
+!pragma teoz true
+
 title "OID4VC DidComm extension"
 participant Wallet order 1
+participant Mediator order 2
 participant "Credential Issuer" as CI order 3
-skinparam ParticipantPadding 130
+skinparam ParticipantPadding 100
 
 autonumber "(0)"
 group OID4VC
@@ -35,9 +38,9 @@ rnote right of Wallet #FFFFFF
    ]
 }
 end rnote
-
-create participant Mediator order 2
+|||
 CI -> Mediator: Response
+& Mediator -> Wallet: Response
 rnote left of CI #FFFFFF
 {
    "@type": "request-presentation",
@@ -48,8 +51,7 @@ rnote left of CI #FFFFFF
    ]
 }
 end rnote
-
-Mediator -> Wallet: Response
+|||
 Wallet -> CI: Presentation
 rnote right of Wallet #FFFFFF
 {
