@@ -1,0 +1,82 @@
+@startuml
+!theme vibrant
+title "OID4VC DidComm extension"
+participant Wallet
+participant Mediator
+participant "Credential Issuer" as CI
+skinparam ParticipantPadding 100
+
+autonumber "(0)"
+
+group DIDComm
+
+
+Wallet -> CI: Propose cred. for correlation
+rnote right of Wallet #FFFFFF
+DidComm Plaintext Msg.:
+
+{
+  "from": "did:peer:client",
+  "to": ["did:x:issuer"],
+  "body": {}
+}
+end rnote
+
+CI -> Mediator: Response
+rnote left of CI #FFFFFF
+{
+    "type": "forward",
+    "to": ["did:x:mediator"],
+    "body":{
+        "next": "did:peer:client"
+    },
+    "attachments": [
+        <Message>
+    ]
+}
+end rnote
+
+Mediator -> Wallet: Response
+rnote left of Mediator #FFFFFF
+{
+  "type": "<some type>”,
+  "from": "did:x:mediator",
+  "to": ["did:peer:client"],
+  "body": {
+      “nonce”: xyz,
+      “metadata”: {...}
+  }
+}
+end rnote
+
+alt <color green>Connection accepted</color>
+    Wallet -> CI: Acknowledgement
+else <color red>Connection declined</color>
+    Wallet -> CI: Error
+end
+end
+
+group OID4VC
+
+skinparam responseMessageBelowArrow true
+Wallet -> CI: Authorization Request
+rnote right of Wallet #FFFFFF
+GET auth.com/authorize?
+   response_type=code
+   &client_id=…
+   &authorization_details= <requestes creds.>
+   <color green>&conn_reference=nonce</color>
+end rnote
+
+CI -> Wallet: Authorization Response
+
+|||
+Wallet -> CI: Token Request
+CI -> Wallet: Token Response
+
+|||
+Wallet -> CI: Credentian Request
+CI -> Wallet: Credential Response
+end
+
+@enduml
