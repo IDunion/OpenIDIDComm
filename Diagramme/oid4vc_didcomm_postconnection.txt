@@ -1,28 +1,31 @@
 @startuml
+!theme vibrant
 title "OID4VC DidComm extension"
 participant Wallet order 1
 participant "Credential Issuer" as CI order 3
+skinparam ParticipantPadding 130
 
 autonumber "(0)"
+group OID4VC
 CI -> Wallet: Metadata
 
-...
+|||
 skinparam responseMessageBelowArrow true
 Wallet -> CI: Authorization Request
 CI -> Wallet: Authorization Response
 
-...
+|||
 Wallet -> CI: Token Request
 CI -> Wallet: Token Response
 
-...
+|||
 Wallet -> CI: Credentian Request
 CI -> Wallet: Credential Response
+end
 
-==DIDComm==
-
+group DIDComm
 Wallet -> CI: Propose cred. for correlation
-rnote left of CI #FFFFFF
+rnote right of Wallet #FFFFFF
 {
    "@type": "propose-presentation",
    "proposals~attach": [
@@ -35,7 +38,7 @@ end rnote
 
 create participant Mediator order 2
 CI -> Mediator: Response
-rnote right of Mediator #FFFFFF
+rnote left of CI #FFFFFF
 {
    "@type": "request-presentation",
    "request_presentations~attach": [
@@ -48,7 +51,7 @@ end rnote
 
 Mediator -> Wallet: Response
 Wallet -> CI: Presentation
-rnote left of CI #FFFFFF
+rnote right of Wallet #FFFFFF
 {
    "@type": "presentation",
    "presentations~attach": [
@@ -58,5 +61,5 @@ rnote left of CI #FFFFFF
    ]
 }
 end rnote
-
+end
 @enduml
