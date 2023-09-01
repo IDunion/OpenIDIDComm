@@ -19,14 +19,14 @@ OpenIDComm extends the existing [OpenID for Verifiable Credential Issuance](http
 
 ## OID4VC Extension
 ### Up-Stream
-![OID4VC Diagram](/Diagramme/vorgelagert.png "OID4VC Extension")
+![OID4VC Diagram](/Diagramme/oid4vc_didcomm_preconnection.png "OID4VC Extension")
 
 In this variant, a DidComm connection is established before the start of the corresponding OID4VC process. The client sends request and receives a random nonce & metadata with DidComm requirements. Based on this metadata, the client can decide, if it wants to acknowledge or send an error.
 
 Next the previous nonce is used in the OID4VC authorization request to correlate the request. Depending on if the DidComm connection was acknowledged or not, the issuer can then allow/deny access.
 
 ### In-Stream
-![OID4VC Diagram](/Diagramme/eingelagert_4VC.png "OID4VC Extension")
+![OID4VC Diagram](/Diagramme/oid4vc_didcomm_midconnection.png "OID4VC Extension")
 
 The Credential Issuer Metadata contains a new attribute `didcomm_required` describing if a DIDComm connection is required or optional to obtain the Verified Credential.
 
@@ -37,7 +37,7 @@ If a DIDComm connection is required but could not be established, the Issuer sen
 ### Down-Stream
 In contrast to the previous flow, this variant establishes the connection after the completion of the main OID4VC process.
 
-![OID4VC Diagram](/Diagramme/nachgelagert.png "OID4VC Downstream Extension")
+![OID4VC Diagram](/Diagramme/oid4vc_didcomm_postconnection.png "OID4VC Downstream Extension")
 
 If the issuer-DID is public, no modifications to the OID4VC flow are made in this variant. Otherwise, the issuer would need to add its DID to its metadata.
 
@@ -45,33 +45,9 @@ Regardless, a request for a DIDComm connection is made by the client after the c
 
 The issuer then resolves the DID contained in the message's `from:` field and uses the contained service endpoint to respond.
 
-**Pros:** No/Minimal modification of the OID4VC flow needed.
-
-**Cons:** Issuer-side enforcement of connection not possible.
-
 ## OID4VP Extension
-![OID4VP Diagram](/Diagramme/eingelagert_4VP.png "OID4VP Extension")
+![OID4VP Diagram](/Diagramme/oid4vp_didcomm_midconnection.png "OID4VP Extension")
 
 The OID4VP protocol is extended similiar to the OID4VC flow but with switched roles. Again, the Authorization Request contains a DID for usage with DIDComm, but this time the Verifier sends the Request and the Wallet initiates the DIDComm channel.
 
 The Authorization Response is treated the same way as described in the OID4VC extension.
-
-## Contributing
-<!-- TODO: -->
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-<!-- TODO: -->
-Show your appreciation to those who have contributed to the project.
-
-## License
-<!-- TODO: -->
-For open source projects, say how it is licensed.
-
-## Project status
-<!-- TODO: -->
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.

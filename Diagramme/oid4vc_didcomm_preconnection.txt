@@ -5,7 +5,7 @@ title "OID4VC DidComm extension"
 participant Wallet
 participant Mediator
 participant "Credential Issuer" as CI
-skinparam ParticipantPadding 100
+skinparam ParticipantPadding 75
 
 autonumber "(0)"
 
