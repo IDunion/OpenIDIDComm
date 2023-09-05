@@ -1,24 +1,33 @@
 @startuml
+!theme vibrant
+!pragma teoz true
+
 title "OID4VC DidComm extension"
-participant Wallet
-participant "Credential Issuer" as CI
+participant Wallet order 1
+participant Mediator order 2
+participant "Credential Issuer" as CI order 3
+
+skinparam ParticipantPadding 75
+skinparam responseMessageBelowArrow true
 
 autonumber "(0)"
+
 CI -> Wallet: Metadata
 rnote left of CI #FFFFFF
 {
-    credentials_supported: [{
-        "id": "UniverseityDegree_JWT",
-        "credential_definition": {
-            "name": {...},
-            "degree: {...}
-        },
-        <color green>"didcomm_required":"REQUIRED"</color>
+  credentials_supported: [{
+    "id": "UniverseityDegree_JWT",
+    "credential_definition": {
+      "name": {...},
+      "degree: {...}
     },
-    {...}]
+    <color green>"didcomm_required":"REQUIRED"</color>
+  },
+  {...}]
 }
 end rnote
-...
+
+|||
 Wallet -> CI: Authorization Request
 rnote right of Wallet #FFFFFF
 GET auth.com/authorize?
@@ -26,16 +35,34 @@ GET auth.com/authorize?
     &client_id=...
     &authorization_details= <requested Credentials>
     <color green>&nonce=xyz</color>
-    <color green>&did=did:peer:client</color>
+    <color green>&did=did:example:client</color>
 end rnote
 autonumber stop
-...
+
+|||
 group **(3) DIDComm**
-CI -[#green]> Wallet: <color green>Establish Connection, correlation to OID4VC flow with //nonce//</color>
-Wallet -[#green]> CI
-CI -[#green]> Wallet
+CI -> Mediator: (3.1) Establish connection
+& Mediator -> Wallet: Forward
+rnote left of CI #FFFFFF
+{
+  "from": "did:example:issuer",
+  "to": ["did:example:mediator"],
+  "body": {
+    "next": "did:example:client",
+  },
+  "attachments": [
+    <Message containing nonce>
+  ]
+}
+end rnote
+
+Wallet -> CI: (3.2) Response
+
+CI -> Mediator : (3.3) Acknowledgement
+& Mediator -> Wallet : Forward
 end
-...
+
+|||
 autonumber 4 "(0)"
 CI -> Wallet: Authorization Response
 rnote left of CI #FFFFFF
@@ -49,5 +76,12 @@ Location: /cb?error=access_denied
     &error_description=DidComm%20Connection%20
         unsuccessful
 end rnote
-... **<size:40>...</size>** ...
+
+|||
+Wallet -> CI: Token Request
+CI -> Wallet: Token Response
+
+|||
+Wallet -> CI: Credentian Request
+CI -> Wallet: Credential Response
 @enduml
