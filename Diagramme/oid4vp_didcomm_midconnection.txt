@@ -1,9 +1,17 @@
 @startuml
+!theme vibrant
+!pragma teoz true
+
 title "OID4VP DidComm extension"
-participant Verifier
-participant Wallet
+participant Verifier order 1
+participant Mediator order 2
+participant Wallet order 3
+
+skinparam ParticipantPadding 75
+skinparam responseMessageBelowArrow true
 
 autonumber "(0)"
+
 Wallet -> Verifier: Metadata
 rnote left of Wallet #FFFFFF
 {
@@ -12,7 +20,9 @@ rnote left of Wallet #FFFFFF
     ...
 }
 end rnote
-...
+
+
+|||
 Verifier -> Wallet: Authorization Request
 rnote right of Verifier #FFFFFF
 GET auth.com/authorize?
@@ -23,18 +33,34 @@ GET auth.com/authorize?
     <color green>&did=did:peer:client</color>
 end rnote
 autonumber stop
-...
+
+
+|||
 group **(3) DIDComm**
-Wallet -[#green]> Verifier: <color green>Establish connection, Correlation to OID4VP flow with //nonce//</color>
-Verifier -[#green]> Wallet
-Wallet -[#green]> Verifier
-end
+Wallet -> Verifier: (3.1) Establish connection
+rnote left of Wallet #FFFFFF
+{
+  "from": "did:peer:client",
+  "to": ["did:x:issuer"],
+  "body": {
+    "nonce": "xyz"
+  }
+}
+end rnote
+
 ...
+Verifier -> Mediator: (3.2) Response
+& Mediator -> Wallet: Forward
+Wallet -> Verifier: (3.3) Acknowledgement
+end rnote
+
+|||
 autonumber 4 "(0)"
 Wallet -> Verifier: Authorization Response
 rnote left of Wallet #FFFFFF
 HTTP/1.1 302 Found
-Location: /cb?code=<auth code>
+Location: /cb?presentation_submission=<presentation>
+    &vp_token=<vp token>
 
 **OR**
 
@@ -43,5 +69,4 @@ Location: /cb?error=access_denied
     &error_description=DidComm%20Connection%20
         unsuccessful
 end rnote
-... **<size:40>...</size>** ...
 @enduml
