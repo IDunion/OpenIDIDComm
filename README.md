@@ -12,9 +12,9 @@ OpenIDComm extends the existing [OpenID for Verifiable Credential Issuance](http
 
 |             |    Pros           |       Cons            |       Comments          |
 |-------------|:-----------------:|:---------------------:|:-----------------------:|
-| Up-Stream   | Conn. enforceable | Spec. modification, <br> Req. public DID | Probably no advantage over In-Stream.
-| In-Stream   | Conn. enforceable | Spec. modification    | /
-| Down-Stream | No spec. modification   | Conn. not enforceable, <br> Req. public DID | /
+| Up-Stream   | Conn. enforceable | Spec. extension, <br> Req. public DID | Probably no advantage over In-Stream.
+| In-Stream   | Conn. enforceable | Spec. extension    | /
+| Down-Stream | No spec. extension   | Conn. not enforceable, <br> Req. public DID | /
 
 
 ## OID4VC Extension
@@ -39,7 +39,7 @@ If a DIDComm connection is required but could not be established, the Issuer sen
 ### Down-Stream
 ![OID4VC Diagram](/Diagramme/oid4vc_didcomm_postconnection.png "OID4VC Downstream Extension")
 
-If the issuer-DID is public, no modifications to the OID4VC flow are made in this variant. Otherwise, the issuer would need to add its DID to its metadata.
+If the issuer-DID is public, no extensions to the OID4VC flow are made in this variant. Otherwise, the issuer would need to add its DID to its metadata.
 
 Regardless, a request for a DIDComm connection is made by the client after the credential has been successfully  issued. This request could contain the issued credential as a verifiable presentation as a way to enable the issuer to verify the client and correlate the connection to the previous issuance.
 
