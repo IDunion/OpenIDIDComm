@@ -1,0 +1,33 @@
+{
+  "name": "veramo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@sphereon/ssi-sdk.kv-store-temp": "^0.17.5",
+    "@sphereon/ssi-sdk.oid4vci-issuer": "^0.15.1",
+    "@sphereon/ssi-sdk.oid4vci-issuer-store": "^0.17.5",
+    "@veramo/core": "^5.5.0",
+    "@veramo/credential-w3c": "^5.5.0",
+    "@veramo/data-store": "^5.5.0",
+    "@veramo/did-manager": "^5.5.0",
+    "@veramo/did-provider-ethr": "^5.5.0",
+    "@veramo/did-provider-key": "^5.5.0",
+    "@veramo/did-provider-peer": "^5.5.0",
+    "@veramo/did-resolver": "^5.5.0",
+    "@veramo/key-manager": "^5.5.0",
+    "@veramo/kms-local": "^5.5.0",
+    "ethr-did-resolver": "^8.1.2",
+    "key-did-resolver": "^3.0.0",
+    "sqlite3": "^5.1.6",
+    "web-did-resolver": "^2.0.27"
+  },
+  "resolutions": {
+    "did-jwt-vc": "3.1.0"
+  }
+}
