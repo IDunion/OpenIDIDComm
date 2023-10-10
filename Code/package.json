@@ -9,6 +9,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@sphereon/oid4vci-common": "^0.7.3",
     "@sphereon/ssi-sdk.kv-store-temp": "^0.17.5",
     "@sphereon/ssi-sdk.oid4vci-issuer": "^0.15.1",
     "@sphereon/ssi-sdk.oid4vci-issuer-store": "^0.17.5",

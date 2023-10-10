@@ -104,7 +104,11 @@ export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataS
         correlationId: "123" 
       }],
       importIssuerOpts: [{
-        issuerOpts: { didOpts: { identifierOpts: { identifier:"xyz"}}},
+        issuerOpts: { didOpts: { identifierOpts: { 
+          // hier eigene did und kid nutzen
+          identifier:"did:peer:2.Ez6LShYp2GaGEuY7KXhDAGjnLXBuXAQzUVXajcP2BEwtdhM5M.Vz6MkuD7yymgiY9UALBTMQCdX15xRnJqi8JWhQ3aoVUcJVFDc.SeyJpZCI6Im1lZGlhdG9yIiwidCI6ImRtIiwicyI6ImRpZDp4OnNvbWVtZWRpYXRvciJ9",
+          kid: "db400e78cdfa32962f91e7876df65f7bfce3607f6fe0d3af8894748274df80e3"
+        }}},
         correlationId:"123"
       }]
     })
