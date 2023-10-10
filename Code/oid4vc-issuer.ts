@@ -1,11 +1,13 @@
 import { agent } from './setup.js'
-import { GrantTypes } from '@sphereon/oid4vci-common'
+import { GrantTypes, CredentialRequestJwtVc } from '@sphereon/oid4vci-common'
 
 async function main() {
     const preauth_code = "some_code"
     await create_offer(preauth_code)
 
     await get_token(preauth_code)
+
+    await issue_credential()
 }
 
 async function create_offer(preauth_code: string) {
@@ -22,7 +24,7 @@ async function create_offer(preauth_code: string) {
     console.log(offer) 
 }
 
-async function get_token(preauth_code: string) {
+async function get_token(preauth_code: string){
     const token = await agent.oid4vciCreateAccessTokenResponse({
         request: {
             grant_type: GrantTypes.PRE_AUTHORIZED_CODE,
@@ -33,6 +35,13 @@ async function get_token(preauth_code: string) {
     })
 
     console.log(token)
+}
+
+async function issue_credential(request: CredentialRequestV1_0_11) {
+    agent.oid4vciIssueCredential({
+        credentialIssuer: "123",
+        credentialRequest: request
+    })
 }
 
 main().catch(console.log)
