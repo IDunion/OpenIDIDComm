@@ -97,9 +97,9 @@ export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataS
     new OID4VCIStore({ 
       importMetadatas: [{ 
         metadata: { 
-          credential_issuer: "issuer.com", 
+          credential_issuer: "http://localhost:8080", 
           credentials_supported: [{ format: "jwt_vc_json", types: ["VerifiableCredential","UniversityDegreeCredential"]}], 
-          credential_endpoint: "https://issuer.com/credentials" 
+          credential_endpoint: "http://localhost:8080/credentials" 
         }, 
         correlationId: "123" 
       }],
