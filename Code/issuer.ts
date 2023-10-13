@@ -1,41 +1,52 @@
 import { agent } from './setup.js'
-import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse } from '@sphereon/oid4vci-common'
+import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse, ProofOfPossession } from '@sphereon/oid4vci-common'
 import { ICredential } from '@sphereon/ssi-types'
 import express, {Express, Request, Response, response} from 'express'
 import bodyParser from 'body-parser'
+import { decodeBase64url } from '@veramo/utils'
 
-async function main() {
-    await agent.oid4vciStoreHasMetadata({correlationId:"123",storeId:"_default",namespace:"oid4vci"})
-    console.log(await agent.didManagerGetByAlias({alias:"test", provider:"did:key"}))
-    const preauth_code = "code" //Math.random().toString(16).slice(2)
-    console.log(await create_offer(preauth_code))
-    
+/* Create issuer DID */
+const identifier = await agent.didManagerGetOrCreate({
+    alias: "issuer",
+    kms: "local",
+    provider: "did:peer",
+    options: {num_algo: 2, service: {
+        id: "123",
+        type: "DIDCommMessaging",
+        serviceEndpoint: "http://localhost:8080/didcomm"
+    }}
+})
+
+async function main() {    
     const server: Express = express()
+    
+    server.get("/offer", async (req: Request, res: Response) => {
+        const preauth_code = Math.random().toString(16).slice(2)
+        console.log("> Offer requested. Pre-auth code: ",preauth_code,"\n\n")
+        res.send(await create_offer(preauth_code))
+    })
 
     server.get("/.well-known/openid-credential-issuer", async (req: Request, res: Response) => {
-        const metadata = await agent.oid4vciStoreGetMetadata({correlationId: "123"})
-        console.log(metadata)
-        res.send(metadata)
+        console.log("> Metadata requested\n\n")
+        res.send( await agent.oid4vciStoreGetMetadata({correlationId: "123"}) )
     })
 
     server.post("/token", express.urlencoded({extended: true}),  async (req: Request, res: Response) => {
-        console.log(req.body)
-        const token = await get_token(req.body)
-        res.send(token)
+        console.log("> Token requested:\n",req.body,"\n")
+        res.send(await get_token(req.body))
     })
 
     server.post("/credentials", bodyParser.json(),  async (req: Request, res: Response) => {
-        console.log(req.body)
-        const credential = await issue_credential(req.body)
-        res.send(credential)
+        console.log("> Credential requested:\n",req.body,"\n")
+        res.send(await issue_credential(req.body))
     })
 
     server.listen(8080, () => {
-        console.log("listening")
+        console.log("Server listening on port 8080\n\n")
     })
 }
 
-async function create_offer(preauth_code: string) { 
+async function create_offer(preauth_code: string): Promise<string> { 
     const offer = await agent.oid4vciCreateOfferURI({
         credentialIssuer: "123", 
         storeId: "_default", 
@@ -43,7 +54,7 @@ async function create_offer(preauth_code: string) {
         grants: { 'urn:ietf:params:oauth:grant-type:pre-authorized_code': { 'pre-authorized_code': preauth_code, user_pin_required: false}}
     })
     
-    console.log(offer) 
+    return offer.uri
 }
 
 async function get_token(request: AccessTokenRequest): Promise<AccessTokenResponse>{
@@ -57,13 +68,15 @@ async function get_token(request: AccessTokenRequest): Promise<AccessTokenRespon
 }
 
 async function issue_credential(request: CredentialRequestJwtVc) {
+    const subject = JSON.parse(decodeBase64url(request.proof!.jwt.split(".")[1])).did
+
     const credential: ICredential = {
-        '@context': "context",
-        type: ["UniversityDegreeCredential"],
-        issuer: "did:peer:2.Ez6LShYp2GaGEuY7KXhDAGjnLXBuXAQzUVXajcP2BEwtdhM5M.Vz6MkuD7yymgiY9UALBTMQCdX15xRnJqi8JWhQ3aoVUcJVFDc.SeyJpZCI6Im1lZGlhdG9yIiwidCI6ImRtIiwicyI6ImRpZDp4OnNvbWVtZWRpYXRvciJ9",
+        '@context': "https://somecontext.com",
+        type: request.types,
+        issuer: identifier.did,
         issuanceDate: (Date.now() / 1000).toString(),
         credentialSubject: {
-            id: "did:key:z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2",
+            id: subject,
             smth: "something about subject"
         }
     }

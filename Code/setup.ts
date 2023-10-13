@@ -42,15 +42,11 @@ import { PeerDIDProvider } from '@veramo/did-provider-peer'
 
 import { IOID4VCIIssuer, OID4VCIIssuer } from '@sphereon/ssi-sdk.oid4vci-issuer'
 import { IOID4VCIStore, OID4VCIStore } from '@sphereon/ssi-sdk.oid4vci-issuer-store'
-import { IKeyValueStore, IValueData, KeyValueStore, ValueStoreType } from '@sphereon/ssi-sdk.kv-store-temp'
 
 
 
 // This will be the name for the local sqlite database for demo purposes
 const DATABASE_FILE = 'database.sqlite'
-
-// You will need to get a project ID from infura https://www.infura.io
-//const INFURA_PROJECT_ID = '<your PROJECT_ID here>'
 
 // This will be the secret key for the KMS
 const KMS_SECRET_KEY = '29739248cad1bd1a0fc4d9b75cd4d2990de535baf5caadfdf8d8f86664aa830c'
@@ -99,7 +95,8 @@ export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataS
         metadata: { 
           credential_issuer: "http://localhost:8080", 
           credentials_supported: [{ format: "jwt_vc_json", types: ["VerifiableCredential","UniversityDegreeCredential"]}], 
-          credential_endpoint: "http://localhost:8080/credentials" 
+          credential_endpoint: "http://localhost:8080/credentials",
+          token_endpoint: "http://localhost:8080/token"
         }, 
         correlationId: "123" 
       }],

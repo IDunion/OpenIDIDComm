@@ -3,56 +3,81 @@ import { AuthzFlowType, Alg } from '@sphereon/oid4vci-common'
 import { CredentialRequestClientBuilder } from '@sphereon/oid4vci-client';
 import { ProofOfPossession } from '@sphereon/oid4vci-common';
 import { agent } from './setup.js'
+import fetch from 'node-fetch';
+import { mapIdentifierKeysToDoc, decodeBase64url, encodeBase64url } from '@veramo/utils'
 import base64url from 'base64url';
 
-const offer_url = 'openid-credential-offer://?credential_offer=%7B%22grants%22%3A%7B%22urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Apre-authorized_code%22%3A%7B%22pre-authorized_code%22%3A%22code%22%2C%22user_pin_required%22%3Afalse%7D%7D%2C%22credential_issuer%22%3A%22http%3A%2F%2Flocalhost%3A8080%22%2C%22credentials%22%3A%5B%7B%22format%22%3A%22jwt_vc_json%22%2C%22types%22%3A%5B%22VerifiableCredential%22%2C%22UniversityDegreeCredential%22%5D%7D%5D%7D'
+
+/* Create client DID */
+const identifier = await agent.didManagerGetOrCreate({
+  alias: "client",
+  kms: "local",
+  provider: "did:peer",
+  options: {num_algo: 2, service: {
+    id: "123",
+    type: "DIDCommMessaging",
+    serviceEndpoint: "http://localhost:8080/didcomm",
+    routingKeys: ["did:example:somemediator#somekey"]
+  }}
+})
+
+/* Get keyID for "assertionMethod" (Key ID from Veramo-DB and DID-Document are different) */
+const local_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod", {agent:agent}))[0].kid
+const global_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod", {agent:agent}))[0].meta.verificationMethod.id
+
+
+const offer_url = await (await fetch("http://localhost:8080/offer")).text()
+console.log("Offer:\n", decodeURI(offer_url))
+
 const client = await OpenID4VCIClient.fromURI({
     uri: offer_url,
     flowType: AuthzFlowType.PRE_AUTHORIZED_CODE_FLOW, // The flow to use
-    kid: 'did:key:z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2#z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2', // Our DID.  You can defer this also to when the acquireCredential method is called
-    alg: Alg.ES256, // The signing Algorithm we will use. You can defer this also to when the acquireCredential method is called
-    clientId: "did:key:z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2#z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2", // The clientId if the Authrozation Service requires it.  If a clientId is needed you can defer this also to when the acquireAccessToken method is called
+    //kid: 'did:key:z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2#z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2', // Our DID.  You can defer this also to when the acquireCredential method is called
+    alg: Alg.EdDSA, // The signing Algorithm we will use. You can defer this also to when the acquireCredential method is called
+    //clientId: "did:key:z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2", // The clientId if the Authrozation Service requires it.  If a clientId is needed you can defer this also to when the acquireAccessToken method is called
     retrieveServerMetadata: true, // Already retrieve the server metadata. Can also be done afterwards by invoking a method yourself.
   })
 
-console.log(client.getIssuer())
-console.log(client.getCredentialEndpoint())
-console.log(client.getAccessTokenEndpoint())
-
 const token = await client.acquireAccessToken()
-console.log(token)
+console.log("Token:\n",token)
 
-const header = base64url(JSON.stringify({
+/* Build Proof JWT */
+const jwt_header = base64url(JSON.stringify({
   typ: "openid4vci-proof+jwt",
-  alg: "EdDSA",
-  kid: "did:key:z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2#z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2"
+  alg: client.alg,
+  //kid: "did:key:z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2#z6Mkn6DopPWt3ziFfXDMeHEHXDnrmWwrrbaNEwpbR5RvQHB2"
+  kid: global_key_id
 }))
 
-const body = base64url(JSON.stringify({
-  aud: "http://localhost:8080",
+const jwt_payload = base64url(JSON.stringify({
+  aud: client.getIssuer(),
   iat: Date.now() / 1000,
   nonce: token.c_nonce,
-  iss: client.clientId
+  iss: identifier.did
 }))
 
 const signature = await agent.keyManagerSign({
-  keyRef: "7179c4bc8c7bf4389f21e19da2159c1e3cd9ce3bc85f47e34e3bea5413fa166d",
-  data: header+"."+body,
-  algorithm: "EdDSA"
+  //keyRef: "7179c4bc8c7bf4389f21e19da2159c1e3cd9ce3bc85f47e34e3bea5413fa166d",
+  keyRef: local_key_id,
+  data: jwt_header+"."+jwt_payload,
+  algorithm: client.alg
 })
 
+console.log(global_key_id)
+console.log(local_key_id)
 const proof: ProofOfPossession = {
   proof_type: "jwt",
-  jwt: header +'.'+ body +'.'+ signature
+  jwt: jwt_header +'.'+ jwt_payload +'.'+ signature
 }
+console.log("Proof:\n",proof)
 
 const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({request: client.credentialOffer, metadata: client.endpointMetadata}).build()
 const credentialResponse = await credentialRequestClient.acquireCredentialsUsingProof({
   proofInput: proof,
-  credentialTypes: "UniversityDegreeCredential", // Needs to match a type from the Initiate Issance Request!
-  format: 'jwt_vc_json', // Allows us to override the format
+  credentialTypes: ["VerifiableCredential","UniversityDegreeCredential"],
+  format: 'jwt_vc_json',
 });
-console.log(credentialResponse)
 
-const credential = JSON.parse(base64url.decode(credentialResponse.successBody?.credential?.split(".")[1]))
-console.log(credential)
+const credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
+console.log("Credential:\n",credential)
+console.log("(Error: ",credentialResponse.errorBody,")")
