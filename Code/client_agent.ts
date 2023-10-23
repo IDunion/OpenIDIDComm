@@ -7,13 +7,11 @@ import {
     IDataStoreORM,
     IKeyManager,
     ICredentialPlugin,
+    IMessageHandler,
 } from '@veramo/core'
 
 // Core identity manager plugin
 import { DIDManager } from '@veramo/did-manager'
-
-// Ethr did identity provider
-//import { EthrDIDProvider } from '@veramo/did-provider-ethr'
 
 // Core key manager plugin
 import { KeyManager } from '@veramo/key-manager'
@@ -27,8 +25,6 @@ import { CredentialPlugin } from '@veramo/credential-w3c'
 // Custom resolvers
 import { DIDResolverPlugin } from '@veramo/did-resolver'
 import { Resolver } from 'did-resolver'
-//import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
-//import { getResolver as webDidResolver } from 'web-did-resolver'
 import { getResolver as keyDidResolver } from 'key-did-resolver'
 import { getResolver as peerDidResolver } from '@veramo/did-provider-peer'
 
@@ -40,13 +36,13 @@ import { DataSource } from 'typeorm'
 import { KeyDIDProvider } from '@veramo/did-provider-key'
 import { PeerDIDProvider } from '@veramo/did-provider-peer'
 
-import { IOID4VCIIssuer, OID4VCIIssuer } from '@sphereon/ssi-sdk.oid4vci-issuer'
-import { IOID4VCIStore, OID4VCIStore } from '@sphereon/ssi-sdk.oid4vci-issuer-store'
+import { MessageHandler } from '@veramo/message-handler'
+import { DIDComm, DIDCommMessageHandler, DIDCommHttpTransport, IDIDComm } from '@veramo/did-comm'
 
 
 
 // This will be the name for the local sqlite database for demo purposes
-const DATABASE_FILE = 'database.sqlite'
+const DATABASE_FILE = 'client.sqlite'
 
 // This will be the secret key for the KMS
 const KMS_SECRET_KEY = '29739248cad1bd1a0fc4d9b75cd4d2990de535baf5caadfdf8d8f86664aa830c'
@@ -64,9 +60,7 @@ const dbConnection = new DataSource({
 }).initialize()
 
 
-const resolvers = new Resolver({ ...keyDidResolver(), ...peerDidResolver() })
-
-export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & IOID4VCIIssuer & IOID4VCIStore>({
+export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & IDIDComm & IMessageHandler>({
   plugins: [
     new KeyManager({
       store: new KeyStore(dbConnection),
@@ -89,25 +83,7 @@ export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataS
       }),
     }),
     new CredentialPlugin(),
-    new OID4VCIIssuer({ defaultStoreId: "_default", defaultNamespace: "oid4vci", resolveOpts: {resolver: resolvers} }),
-    new OID4VCIStore({ 
-      importMetadatas: [{ 
-        metadata: { 
-          credential_issuer: "http://localhost:8080", 
-          credentials_supported: [{ format: "jwt_vc_json", types: ["VerifiableCredential","UniversityDegreeCredential"]}], 
-          credential_endpoint: "http://localhost:8080/credentials",
-          token_endpoint: "http://localhost:8080/token"
-        }, 
-        correlationId: "123" 
-      }],
-      importIssuerOpts: [{
-        issuerOpts: { didOpts: { identifierOpts: { 
-          // hier eigene did und kid nutzen
-          identifier:"did:peer:2.Ez6LShYp2GaGEuY7KXhDAGjnLXBuXAQzUVXajcP2BEwtdhM5M.Vz6MkuD7yymgiY9UALBTMQCdX15xRnJqi8JWhQ3aoVUcJVFDc.SeyJpZCI6Im1lZGlhdG9yIiwidCI6ImRtIiwicyI6ImRpZDp4OnNvbWVtZWRpYXRvciJ9",
-          kid: "db400e78cdfa32962f91e7876df65f7bfce3607f6fe0d3af8894748274df80e3"
-        }}},
-        correlationId:"123"
-      }]
-    })
+    new MessageHandler({ messageHandlers: [new DIDCommMessageHandler()] }),
+    new DIDComm([new DIDCommHttpTransport()])
   ],
 })

@@ -1,7 +1,7 @@
-import { agent } from './setup.js'
-import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse, ProofOfPossession } from '@sphereon/oid4vci-common'
+import { agent } from './issuer_agent.js'
+import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse } from '@sphereon/oid4vci-common'
 import { ICredential } from '@sphereon/ssi-types'
-import express, {Express, Request, Response, response} from 'express'
+import express, {Express, Request, Response} from 'express'
 import bodyParser from 'body-parser'
 import { decodeBase64url } from '@veramo/utils'
 
@@ -15,6 +15,14 @@ const identifier = await agent.didManagerGetOrCreate({
         type: "DIDCommMessaging",
         serviceEndpoint: "http://localhost:8080/didcomm"
     }}
+})
+
+await agent.oid4vciStorePersistIssuerOpts({
+    issuerOpts:{didOpts:{identifierOpts:{
+        identifier: identifier.did,
+        kid: identifier.keys.find(x => x.type == "Ed25519")!.kid,
+    }}},
+    correlationId: "123"
 })
 
 async function main() {    
@@ -74,7 +82,7 @@ async function issue_credential(request: CredentialRequestJwtVc) {
         '@context': "https://somecontext.com",
         type: request.types,
         issuer: identifier.did,
-        issuanceDate: (Date.now() / 1000).toString(),
+        issuanceDate: (Math.floor(Date.now() / 1000)).toString(),
         credentialSubject: {
             id: subject,
             smth: "something about subject"
