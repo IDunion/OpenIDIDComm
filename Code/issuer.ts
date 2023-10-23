@@ -49,6 +49,13 @@ async function main() {
         res.send(await issue_credential(req.body))
     })
 
+    server.post("/didcomm", bodyParser.raw({type: "text/plain"}), async (req: Request, res: Response) => {
+        console.log("> Didcomm message:\n")
+        console.log( await agent.handleMessage({ raw: req.body.toString() }) )
+        console.log("\n")
+        res.sendStatus(200)
+    })
+
     server.listen(8080, () => {
         console.log("Server listening on port 8080\n\n")
     })

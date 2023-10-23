@@ -5,6 +5,7 @@ import { ProofOfPossession } from '@sphereon/oid4vci-common';
 import { agent } from './client_agent.js'
 import fetch from 'node-fetch';
 import { mapIdentifierKeysToDoc, decodeBase64url, encodeBase64url } from '@veramo/utils'
+import { IDIDCommMessage } from '@veramo/did-comm';
 
 /* Create client DID */
 const identifier = await agent.didManagerGetOrCreate({
@@ -23,6 +24,21 @@ const identifier = await agent.didManagerGetOrCreate({
 const local_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod", {agent:agent}))[0].kid
 const global_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod", {agent:agent}))[0].meta.verificationMethod.id
 
+/* DIDcomm */
+const recipient = "did:peer:2.Ez6LSdsdGTFFpLKu9ntiCHKKmNP7BZPK8pQhesJ7VWFt4GFy8.Vz6MkhmWRbuvYrjVXG7ubbnmkva2nnErEdXfW7CtydQDyaDwJ.SeyJpZCI6IjEyMyIsInQiOiJkbSIsInMiOiJodHRwOi8vbG9jYWxob3N0OjgwODAvZGlkY29tbSJ9"
+const rcpt_keyagreement = "did:peer:2.Ez6LSdsdGTFFpLKu9ntiCHKKmNP7BZPK8pQhesJ7VWFt4GFy8.Vz6MkhmWRbuvYrjVXG7ubbnmkva2nnErEdXfW7CtydQDyaDwJ.SeyJpZCI6IjEyMyIsInQiOiJkbSIsInMiOiJodHRwOi8vbG9jYWxob3N0OjgwODAvZGlkY29tbSJ9#6LSdsdGTFFpLKu9ntiCHKKmNP7BZPK8pQhesJ7VWFt4GFy8"
+const message: IDIDCommMessage = {
+  type: "abc",
+  to: recipient,
+  from: identifier.did,
+  id: "1234",
+  body: {
+    message: "test message"
+  }
+}
+
+const packed_msg = await agent.packDIDCommMessage({ message: message, packing: "authcrypt", keyRef: rcpt_keyagreement })
+await agent.sendDIDCommMessage({ messageId: "123", packedMessage: packed_msg, recipientDidUrl: recipient })
 
 const offer_url = await (await fetch("http://localhost:8080/offer")).text()
 console.log("Offer:\n", decodeURI(offer_url))
