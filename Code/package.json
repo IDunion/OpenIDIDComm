@@ -10,11 +10,14 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@sphereon/did-auth-siop": "^0.5.0-unstable.7",
     "@sphereon/oid4vci-client": "^0.7.3",
     "@sphereon/oid4vci-common": "^0.7.3",
     "@sphereon/ssi-sdk.kv-store-temp": "^0.17.5",
     "@sphereon/ssi-sdk.oid4vci-issuer": "^0.15.1",
     "@sphereon/ssi-sdk.oid4vci-issuer-store": "^0.17.5",
+    "@sphereon/ssi-sdk.siopv2-oid4vp-op-auth": "^0.17.5",
+    "@sphereon/ssi-sdk.siopv2-oid4vp-rp-auth": "^0.17.5",
     "@sphereon/ssi-types": "^0.17.5",
     "@veramo/core": "^5.5.0",
     "@veramo/credential-w3c": "^5.5.0",
@@ -24,6 +27,7 @@
     "@veramo/did-provider-ethr": "^5.5.0",
     "@veramo/did-provider-key": "^5.5.0",
     "@veramo/did-provider-peer": "^5.5.0",
+    "@veramo/did-provider-web": "^5.5.3",
     "@veramo/did-resolver": "^5.5.0",
     "@veramo/key-manager": "^5.5.0",
     "@veramo/kms-local": "^5.5.0",
