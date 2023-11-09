@@ -51,3 +51,43 @@ Alternatively, if a DIDcomm connection is wanted even if the issuance was not su
 The OID4VP protocol is extended similiar to the OID4VC flow but with reversed roles. Again, the Authorization Request contains a DID for usage with DIDComm, but this time the Verifier sends the Request and the Wallet initiates the DIDComm channel.
 
 The Authorization Response is treated the same way as described in the In-Stream OID4VC extension.
+
+# Updated Version
+
+Goal: Update the current README with new thoughts and considerations
+
+## Requirements
+
+Primary:
+- DIDComm channel in addition to OID4VC/VP for future communication between parties (Holder and Issuer or Holder and Verifier)
+- support both flows
+
+Secondary, optional:
+- Enforce DIDComm channel before VC is issued/verified
+- No change of the OID4VC/VP Specification
+- Different DIDs for Credential Issuance and DIDComm
+- same solution for both protocols
+
+Required Steps:
+- DID Discovery (Get DID from at least one party)
+- DID resolving to DID Document (with service endpoint)
+- Linking DIDComm Channel and OID4VC/VP flow (How can one know, that both protocols are used in the same context)
+
+## Solutions
+
+Every Solution should describe how it solves the requirements and required steps.  
+Furthermore, every solution should evaluate its benefits (i. e. what secondary requirements were met) and limitations (i. e. what secondary requirements were not met).  
+And contain sequence diagrams for visualization.
+
+Solution:
+- OID4VC/VP in message extension ("mainly" authorized flow)
+- SIOP + OID4VC/VP (authorized flow + pre-authorized flow)
+
+### OID4VC/VP Message Extension
+
+TODO: describe
+
+### SIOP + OID4VC/VP
+
+TODO: describe
+
