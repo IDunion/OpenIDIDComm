@@ -1,7 +1,7 @@
 @startuml
 !theme vibrant
 !pragma teoz true
-title "OID4VC+SIOP Auth."
+title "OID4VP+SIOP."
 participant Verifier
 participant Wallet
 skinparam ParticipantPadding 75
