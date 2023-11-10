@@ -1,10 +1,10 @@
 @startuml
 !theme vibrant
 !pragma teoz true
-title "OID4VC DidComm extension"
+title "OID4VC+SIOP Preauth"
 participant Wallet
 participant "Issuer" as CI
-skinparam ParticipantPadding 100
+skinparam ParticipantPadding 75
 
 alt <color green>DidComm required or optional</color>
     CI -> Wallet: SIOP Request
