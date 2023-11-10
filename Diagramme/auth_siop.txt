@@ -1,10 +1,10 @@
 @startuml
 !theme vibrant
 !pragma teoz true
-title "OID4VC DidComm extension"
+title "OID4VC+SIOP Auth."
 participant Wallet
 participant "Issuer" as CI
-skinparam ParticipantPadding 100
+skinparam ParticipantPadding 75
 
 
 Wallet -> CI: Auth. Request

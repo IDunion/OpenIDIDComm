@@ -95,4 +95,4 @@ This way a DidComm channel for future use can be created in the Auth./Consent st
 
 Additionally a DidComm channel can be enforced, no change to the OID4VC flow is necessary and different DIDs can be used.
 
-![OID4VC Diagram](/Diagramme/preauth_siop.png)
+![OID4VC Diagram](/Diagramme/preauth_siop.png) ![OID4VC Diagram](/Diagramme/auth_siop.png)
