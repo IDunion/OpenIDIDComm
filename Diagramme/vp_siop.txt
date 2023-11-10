@@ -1,0 +1,33 @@
+@startuml
+!theme vibrant
+!pragma teoz true
+title "OID4VC+SIOP Auth."
+participant Verifier
+participant Wallet
+skinparam ParticipantPadding 75
+
+
+Verifier -> Wallet: Auth. Request URI
+|||
+Wallet -> Verifier: Auth. Request Request
+alt <color green>DidComm required or optional</color>
+Verifier -> Wallet: Auth. Request (response_type = vp_token id_token)
+    alt <color green>Required</color>
+      Wallet <- Wallet: Auth./Consent
+      Wallet -> Verifier: VP + ID Token with DID
+        group DIDComm
+           Verifier -> Wallet: Connection Request
+           Wallet -> Verifier: Acknowledge
+        end
+      Verifier -> Verifier: Valid
+    else <color red>Optional</color>
+        Wallet -> Verifier: VP
+        Verifier -> Verifier: Valid
+    end
+else <color red>Not supported</color>
+    Verifier -> Wallet: Auth. Request (response_type = vp_token)
+    Wallet <- Wallet: Auth./Consent
+    Wallet -> Verifier: VP
+    Verifier -> Verifier: Valid
+end
+@enduml

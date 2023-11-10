@@ -96,3 +96,7 @@ This way a DidComm channel for future use can be created in the Auth./Consent st
 Additionally a DidComm channel can be enforced, no change to the OID4VC flow is necessary and different DIDs can be used.
 
 ![OID4VC Diagram](/Diagramme/preauth_siop.png)![OID4VC Diagram](/Diagramme/auth_siop.png)
+
+In the case of OID4VP, an ID Token can be issued alongside the Verifiable Presentation without the use of the SIOP flow.
+
+![OID4VC Diagram](/Diagramme/vp_siop.png)
