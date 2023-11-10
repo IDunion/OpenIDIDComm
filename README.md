@@ -89,5 +89,10 @@ TODO: describe
 
 ### SIOP + OID4VC/VP
 
-TODO: describe
+This solution utilizes "Self Issued Identity Providers" (SIOP) to pass the Wallet's DID to the Issuer. This DID is subsequently resolved by the Issuer to confirm the service endpoint. Finally, if all requirements are met, a custom OID4VC offer is passed via the DidComm channel, which the Wallet can use to start/continue the OID4VC flow.
 
+This way a DidComm channel for future use can be created in the Auth./Consent step of both the authorized and preauthorized flow.
+
+Additionally a DidComm channel can be enforced, no change to the OID4VC flow is necessary and different DIDs can be used.
+
+![OID4VC Diagram](/Diagramme/preauth_siop.png)

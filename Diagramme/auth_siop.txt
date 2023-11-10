@@ -6,6 +6,10 @@ participant Wallet
 participant "Issuer" as CI
 skinparam ParticipantPadding 100
 
+
+Wallet -> CI: Auth. Request
+Wallet <- Wallet: Auth & Consent
+|||
 alt <color green>DidComm required or optional</color>
     CI -> Wallet: SIOP Request
     alt <color green>Required</color>
@@ -13,14 +17,14 @@ alt <color green>DidComm required or optional</color>
         group DIDComm
            CI -> Wallet: Connection Request
            Wallet -> CI: Acknowledge
-           CI -> Wallet: OID4VC Offer
+           CI -> Wallet: OID4VC Auth. Code
         end
     else <color red>Optional</color>
         Wallet -> CI: Cancel
-        CI -> Wallet: OID4VC Offer
+        CI -> Wallet: OID4VC Auth. Code
     end
 else <color red>Not required</color>
-    CI -> Wallet: OID4VC Offer
+    CI -> Wallet: OID4VC Auth. Code
 end
 
 |||
