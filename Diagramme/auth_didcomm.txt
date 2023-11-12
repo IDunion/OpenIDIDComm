@@ -1,0 +1,31 @@
+@startuml
+!theme vibrant
+!pragma teoz true
+title "OID4VC+DIDComm Auth"
+participant Wallet
+participant "Issuer" as CI
+skinparam ParticipantPadding 75
+
+Wallet -> CI: Auth. Request
+Wallet <- Wallet: Auth & Consent
+alt <color green>DIDComm required</color> or <color orange>optional</color>
+    Wallet <- CI: DIDComm Invitation
+    alt <color green>Required</color>
+        group DIDComm
+           Wallet -> CI: Acknowledge
+           Wallet <- CI: Auth. Code
+        end
+    else <color orange>Optional</color>
+        Wallet -> CI: ???
+        Wallet <- CI: Auth. Code
+    end
+else <color red>Not required</color>
+    Wallet <- CI: Auth. Code
+end
+|||
+Wallet -> CI: Token Request
+Wallet <- CI: Access Token
+|||
+Wallet -> CI: Credential Request
+CI -> Wallet: Credential
+@enduml
