@@ -106,3 +106,28 @@ In the case of OID4VP, an ID Token can be issued alongside the Verifiable Presen
 This solution just relies on the default DIDComm signature instead of using SIOP.
 
 ![OID4VC Diagram](/Diagramme/preauth_didcomm.png)![OID4VC Diagram](/Diagramme/auth_didcomm.png)
+
+DIDs in Metadata
+
+### Tokenendpoint DIDComm verification (OID4VC)
+- Token Request includes DID (OPTIONAL for Authorized-Flow, REQUIRED for Pre-Authorized-Flow)
+- Issuer checks if DIDComm channel with the given DID already exists, if not create a new one (Send msg and wait for answer)
+- On success, continue. On Failure, Token-Response contains Error
+- Linking between DIDComm and OID4VC via DID in token plus additional proof or the DID with proof from Client Metadata
+
+## Building Blocks
+
+DID Exchange:
+- Metadata
+- SIOP
+- Token-/Authorization-Request (or other OID4VC Message)
+
+DIDComm connection creation:
+- after Authorization-Request (only for Authflow)
+- after Token-Requet (both Flows)
+- after SIOP
+
+Linking of DIDComm and OID4VC:
+- Send DID with Proof inside of the OID4VC-Flow
+- Send (at least one) OID4VC-Message via DIDComm
+- Nonce/Secret
