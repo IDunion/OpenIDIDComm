@@ -95,19 +95,26 @@ This way a DidComm channel for future use can be created in the Auth./Consent st
 
 Additionally a DidComm channel can be enforced, no change to the OID4VC flow is necessary and different DIDs can be used.
 
-![OID4VC Diagram](/Diagramme/preauth_siop.png)![OID4VC Diagram](/Diagramme/auth_siop.png)
+![OID4VC Diagram](/Diagramme/siop.png)
 
 In the case of OID4VP, an ID Token can be issued alongside the Verifiable Presentation without the use of the SIOP flow.
 
 ![OID4VC Diagram](/Diagramme/vp_siop.png)
 
-### DIDComm + OID4VC
+### DIDComm Invitation + OID4VC
 
 This solution just relies on the default DIDComm signature instead of using SIOP.
 
-![OID4VC Diagram](/Diagramme/preauth_didcomm.png)![OID4VC Diagram](/Diagramme/auth_didcomm.png)
+![OID4VC Diagram](/Diagramme/didcomm_invitation.png)
 
-DIDs in Metadata
+### Iss. Metadata + OID4VC
+![OID4VC Diagram](/Diagramme/iss_metadata.png)
+
+### Client Metadata + OID4VC
+![OID4VC Diagram](/Diagramme/client_metadata.png)
+
+### DID Proof + OID4VC
+![OID4VC Diagram](/Diagramme/did_proof.png)
 
 ### Tokenendpoint DIDComm verification (OID4VC)
 - Token Request includes DID (OPTIONAL for Authorized-Flow, REQUIRED for Pre-Authorized-Flow)
@@ -115,7 +122,7 @@ DIDs in Metadata
 - On success, continue. On Failure, Token-Response contains Error
 - Linking between DIDComm and OID4VC via DID in token plus additional proof or the DID with proof from Client Metadata
 
-## Building Blocks
+### Building Blocks
 
 DID Exchange:
 - Metadata

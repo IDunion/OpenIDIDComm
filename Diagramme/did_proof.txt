@@ -1,0 +1,23 @@
+@startuml
+!theme vibrant
+!pragma teoz true
+title "OID4VC + DID Proof"
+participant Wallet
+participant "Issuer" as CI
+skinparam ParticipantPadding 75
+skinparam sequenceMessageAlign reverseDirection
+
+Wallet <-> CI: ?
+|||
+alt DidComm <color green>required</color>
+   Wallet -> CI: Credential Request + DID JWT
+   group DIDComm
+      Wallet <- CI: Ping
+      Wallet -> CI: Acknowledge
+   end
+   Wallet <- CI: Credential
+else <color red>Not required</color> or <color orange>Optional</color>
+   Wallet -> CI: Credential Request
+   Wallet <- CI: Credential
+end
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+!theme vibrant
+!pragma teoz true
+title "OID4VC + Client Metadata"
+participant Wallet
+participant "Issuer" as CI
+skinparam ParticipantPadding 75
+skinparam sequenceMessageAlign reverseDirection
+
+alt DidComm <color green>required</color>
+   Wallet -> CI: Dyn. Registration + DID
+   group DIDComm
+   Wallet <- CI: Ping
+   Wallet -> CI: Acknowledge
+   end
+else <color red>Not required</color> or <color orange>Optional</color>
+   Wallet -> CI: Dyn. Registration
+end
+...
+Wallet <-> CI: ?
+|||
+Wallet -> CI: OID4VC Request + client_id
+Wallet <- CI: OID4VC Response
+|||
+Wallet <-> CI: ?
+@enduml

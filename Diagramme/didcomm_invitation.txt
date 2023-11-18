@@ -1,29 +1,28 @@
 @startuml
 !theme vibrant
 !pragma teoz true
-title "OID4VC+DIDComm Preauth"
+title "OID4VC + DIDComm Invitation"
 participant Wallet
 participant "Issuer" as CI
 skinparam ParticipantPadding 75
+skinparam sequenceMessageAlign reverseDirection
 
-alt <color green>DIDComm required</color> or <color orange>optional</color>
+Wallet <-> CI: ?
+|||
+alt DidComm <color green>required</color> or <color orange>optional</color>
     Wallet <- CI: DIDComm Invitation
     alt <color green>Required</color>
         group DIDComm
            Wallet -> CI: Acknowledge
-           Wallet <- CI: Offer
+           Wallet <- CI: OID4VC Response
         end
     else <color orange>Optional</color>
         Wallet -> CI: ???
-        Wallet <- CI: Offer
+        Wallet <- CI: OID4VC Response
     end
 else <color red>Not required</color>
-    Wallet <- CI: Offer
+    Wallet <- CI: OID4VC Response
 end
 |||
-Wallet -> CI: Token Request
-Wallet <- CI: Access Token
-|||
-Wallet -> CI: Credential Request
-CI -> Wallet: Credential
+Wallet <-> CI: ?
 @enduml

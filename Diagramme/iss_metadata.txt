@@ -1,0 +1,29 @@
+@startuml
+!theme vibrant
+!pragma teoz true
+title "OID4VC + Iss. Metadata"
+participant Wallet
+participant "Issuer" as CI
+skinparam ParticipantPadding 75
+skinparam sequenceMessageAlign reverseDirection
+
+Wallet <- CI: Metadata + DID + Requirements
+|||
+Wallet <-> CI: ?
+|||
+alt DidComm <color green>required</color> or <color orange>optional</color>
+    alt <color green>Required</color>
+        group DIDComm
+           Wallet -> CI: OID4VC Request
+           Wallet <- CI: OID4VC Response
+        end
+    else <color orange>Optional</color>
+        Wallet -> CI: OID4VC Request
+        Wallet <- CI: OID4VC Response
+    end
+else <color red>Not required</color>
+    Wallet <- CI: OID4VC Response
+end
+|||
+Wallet <-> CI: ?
+@enduml
