@@ -16,8 +16,8 @@ alt DidComm <color green>required</color> or <color orange>optional</color>
         group DIDComm
            CI -> Wallet: Ping
            Wallet -> CI: Acknowledge
-           CI -> Wallet: OID4VC Response
         end
+        CI -> Wallet: OID4VC Response
     else <color orange>Optional</color>
         Wallet -> CI: Cancel
         CI -> Wallet: OID4VC Response

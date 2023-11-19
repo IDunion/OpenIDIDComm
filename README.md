@@ -73,7 +73,11 @@ Required Steps:
 - DID resolving to DID Document (with service endpoint)
 - Linking DIDComm Channel and OID4VC/VP flow (How can one know, that both protocols are used in the same context)
 
-## Solutions
+## OAuth 2
+
+![OID4VC Diagram](/Diagramme/oauth2.png)
+
+## DID Exchange Solutions
 
 Every Solution should describe how it solves the requirements and required steps.  
 Furthermore, every solution should evaluate its benefits (i. e. what secondary requirements were met) and limitations (i. e. what secondary requirements were not met).  
@@ -87,7 +91,7 @@ Solution:
 
 TODO: describe
 
-### SIOP + OID4VC/VP
+### SIOP
 
 This solution utilizes "Self Issued Identity Providers" (SIOP) to pass the Wallet's DID to the Issuer. This DID is subsequently resolved by the Issuer to confirm the service endpoint. Finally, if all requirements are met, a custom OID4VC offer is passed via the DidComm channel, which the Wallet can use to start/continue the OID4VC flow.
 
@@ -97,23 +101,19 @@ Additionally a DidComm channel can be enforced, no change to the OID4VC flow is 
 
 ![OID4VC Diagram](/Diagramme/siop.png)
 
-In the case of OID4VP, an ID Token can be issued alongside the Verifiable Presentation without the use of the SIOP flow.
-
-![OID4VC Diagram](/Diagramme/vp_siop.png)
-
-### DIDComm Invitation + OID4VC
+### DIDComm Invitation
 
 This solution just relies on the default DIDComm signature instead of using SIOP.
 
 ![OID4VC Diagram](/Diagramme/didcomm_invitation.png)
 
-### Iss. Metadata + OID4VC
+### Iss. Metadata
 ![OID4VC Diagram](/Diagramme/iss_metadata.png)
 
-### Client Metadata + OID4VC
+### Client Metadata
 ![OID4VC Diagram](/Diagramme/client_metadata.png)
 
-### DID Proof + OID4VC
+### DID Proof
 ![OID4VC Diagram](/Diagramme/did_proof.png)
 
 ### Tokenendpoint DIDComm verification (OID4VC)
