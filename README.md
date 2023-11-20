@@ -60,13 +60,13 @@ Goal: Update the current README with new thoughts and considerations
 
 Primary:
 - DIDComm channel in addition to OID4VC/VP for future communication between parties (Holder and Issuer or Holder and Verifier)
-- support both flows
+- support both flows (authorization and pre-autorization flow)
+- Enforce DIDComm channel before VC is issued/verified
+- No change of the OID4VC/VP Specification (but extension with additional parameters possible)
 
 Secondary, optional:
-- Enforce DIDComm channel before VC is issued/verified
-- No change of the OID4VC/VP Specification
+- Ideally same solution for both protocols (OpenID4VCI + OpenID4VP)
 - Different DIDs for Credential Issuance and DIDComm
-- same solution for both protocols
 
 Required Steps:
 - DID Discovery (Get DID from at least one party)
