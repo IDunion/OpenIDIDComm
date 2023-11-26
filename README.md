@@ -13,8 +13,11 @@
 ![Oauth2](/Diagramme/oauth2.png)
 ### OID4VCI
 Auth. Flow
+
 ![Auth. Flow](/Diagramme/oid4vci_auth.png)
+
 Preauth. Flow
+
 ![Prauth. Flow](/Diagramme/oid4vci_preauth.png)
 
 # Requirements
@@ -34,7 +37,7 @@ Required Steps:
 - DID resolving to DID Document (with service endpoint)
 - Linking DIDComm Channel and OID4VC/VP flow (How can one know, that both protocols are used in the same context)
 
-## Solutions
+# Solutions
 
 Every Solution should describe how it solves the requirements and required steps.  
 Furthermore, every solution should evaluate its benefits (i. e. what secondary requirements were met) and limitations (i. e. what secondary requirements were not met).  
