@@ -1,12 +1,6 @@
 # Openidcomm
 
-- [Background](#background)
-    - [OAuth-2](#oauth2)
-    - [OID4VCI](#oid4vci)
-- [Requirements](#requirements)
-- [Solutions](#solutions)
-    - [SIOP](#siop)
-    - [DID JWT](#did-jwt)
+[[_TOC_]]
 
 # Background
 ### OAuth2
