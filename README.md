@@ -4,23 +4,23 @@
 
 # Background
 ### OAuth2
-![Oauth2](/Diagramme/oauth2.png)
+![Oauth2](/Diagramme/OAuth2/oauth2.png)
 ### OID4VCI
 Auth. Flow
 
-![Auth. Flow](/Diagramme/oid4vci_auth.png)
+![Auth. Flow](/Diagramme/OID4VCI/oid4vci_auth.png)
 
 Preauth. Flow
 
-![Prauth. Flow](/Diagramme/oid4vci_preauth.png)
+![Prauth. Flow](/Diagramme/OID4VCI/oid4vci_preauth.png)
 
 # Requirements
 
 Primary:
-- DIDComm channel in addition to OID4VC/VP for future communication between parties (Holder and Issuer or Holder and Verifier)
+- DIDComm channel in addition to OID4VCI/VP for future communication between parties (Holder and Issuer or Holder and Verifier)
 - support both flows (authorization and pre-autorization flow)
 - Enforce DIDComm channel before VC is issued/verified
-- No change of the OID4VC/VP Specification (but extension with additional parameters possible)
+- No change of the OID4VCI/VP Specification (but extension with additional parameters possible)
 
 Secondary, optional:
 - Ideally same solution for both protocols (OpenID4VCI + OpenID4VP)
@@ -29,7 +29,7 @@ Secondary, optional:
 Required Steps:
 - DID Discovery (Get DID from at least one party)
 - DID resolving to DID Document (with service endpoint)
-- Linking DIDComm Channel and OID4VC/VP flow (How can one know, that both protocols are used in the same context)
+- Linking DIDComm Channel and OID4VCI/VP flow (How can one know, that both protocols are used in the same context)
 
 # Solutions
 
@@ -50,7 +50,7 @@ Required:
 Optional:
 - Solution supports usage of different DIDs
 
-![OID4VC Diagram](/Diagramme/siop.png)
+![OID4VC Diagram](/Diagramme/OID4VCI/SIOP/siop.png)
 
 ### DID JWT
 
@@ -65,4 +65,4 @@ Required:
 Optional:
 - Solution supports usage of different DIDs
 
-![OID4VC Diagram](/Diagramme/did_proof.png)
+![OID4VC Diagram](/Diagramme/OID4VCI/DID_Proof/did_proof.png)
