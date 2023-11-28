@@ -7,11 +7,8 @@ participant Wallet
 skinparam ParticipantPadding 75
 
 
-Verifier -> Wallet: Auth. Request URI
-|||
-Wallet -> Verifier: Auth. Request Request
 alt <color green>DidComm required or optional</color>
-Verifier -> Wallet: Auth. Request (response_type = vp_token id_token)
+Verifier -> Wallet: Auth. Request (response_type = vp_token did) + Metadata
     alt <color green>Required</color>
       Wallet <- Wallet: Auth./Consent
       Wallet -> Verifier: VP + ID Token with DID

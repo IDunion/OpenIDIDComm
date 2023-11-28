@@ -66,3 +66,7 @@ Optional:
 - Solution supports usage of different DIDs
 
 ![OID4VC Diagram](/Diagramme/OID4VCI/DID_Proof/did_proof.png)
+
+This solution could also be applied to OID4VP.
+
+![OID4VC Diagram](/Diagramme/OID4VCI/DID_Proof/did_proof.png)
