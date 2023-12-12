@@ -8,19 +8,6 @@ skinparam ParticipantPadding 100
 skinparam sequenceMessageAlign reverseDirection
 
 Wallet <-> CI: Obtain Issuer metadata
-rnote left of CI #FFFFFF
-{
-  credentials_supported: [{
-    "id": "UniverseityDegree_JWT",
-    "credential_definition": {
-      "name": {...},
-      "degree: {...}
-    },
-    <color green>"didcomm_required":"REQUIRED"</color>
-  },
-  {...}]
-}
-end rnote
 
 ... <size:20>**...**</size> ...
 
@@ -30,16 +17,6 @@ group DIDComm <color green>required</color> or <color orange>optional</color>
     CI -> Wallet: SIOP Request
     alt With DIDComm
         Wallet -> CI: SIOP Response (id_token)
-rnote left of CI #FFFFFF
-{
-  "iss": "did:peer:...",
-  "sub": "did:peer:...",
-  "aud": "issuer.example.org",
-  "nonce": "n-0S6_WzA2Mj",
-  "exp": 1311281970,
-  "iat": 1311280970
-}
-end rnote
         group DIDComm
            CI -> Wallet: Ping
            Wallet -> CI: Acknowledge
