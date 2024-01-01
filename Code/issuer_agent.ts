@@ -66,7 +66,7 @@ const dbConnection = new DataSource({
 }).initialize()
 
 
-const resolvers = new Resolver({ ...keyDidResolver(), ...peerDidResolver(), ...webDidResolver() })
+export const resolvers = new Resolver({ ...keyDidResolver(), ...peerDidResolver(), ...webDidResolver() })
 
 export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & IOID4VCIIssuer & ISIOPv2RP & IOID4VCIStore & IDIDComm & IMessageHandler>({
   plugins: [

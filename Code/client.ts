@@ -1,5 +1,5 @@
 import { OpenID4VCIClient} from '@sphereon/oid4vci-client';
-import { AuthzFlowType, Alg } from '@sphereon/oid4vci-common'
+import { AuthzFlowType, Alg, OpenId4VCIVersion } from '@sphereon/oid4vci-common'
 import { CredentialRequestClientBuilder } from '@sphereon/oid4vci-client';
 import { ProofOfPossession } from '@sphereon/oid4vci-common';
 import { agent } from './client_agent.js'
@@ -8,7 +8,6 @@ import { mapIdentifierKeysToDoc, decodeBase64url, encodeBase64url } from '@veram
 import { IDIDCommMessage } from '@veramo/did-comm';
 import express, {Express, Request, Response} from 'express'
 import bodyParser from 'body-parser'
-import { IAuthorizationRequestPayloads } from '@sphereon/ssi-sdk.siopv2-oid4vp-rp-auth'
 
 /*********/
 /* SETUP */
@@ -38,29 +37,21 @@ const server: Express = express()
 /* Hier kommt die kommt die DidComm Verbindungsanfrage an */
 server.post("/didcomm", bodyParser.raw({type: "text/plain"}), async (req: Request, res: Response) => {
   const message = await agent.handleMessage({raw: req.body.toString()})
-  const document = (await agent.resolveDid({ didUrl: message.from! })).didDocument!
 
-  if (message.type == "connection_test"){
-    const body = message.data! as {nonce:string}
-    console.log("DidComm Verbindungsanfrage erhalten: ", body, "\n")
-
+  if (message.type == "ping"){
+    console.log("DidComm Ping erhalten: {id:"+message.id+", thid:"+message.threadId+", data:"+JSON.stringify(message.data)+"}")
     const response: IDIDCommMessage = {
-      type: "connection_ack",
+      type: "pong",
       to: message.from!,
       from: identifier.did,
-      id: message.id,
-      body: body
+      id: Math.random().toString().slice(2,5),
+      thid: message.id,
+      body: {}
     }
     
-    console.log("Sende Bestätigung....")
+    console.log("Sende Pong....")
     const packed_msg = await agent.packDIDCommMessage({ message: response, packing: "authcrypt"})
     agent.sendDIDCommMessage({ messageId: "123", packedMessage: packed_msg, recipientDidUrl: message.from! })
-    res.sendStatus(200)
-  }
-  else if (message.type == "offer"){
-    const body = message.data! as { nonce:string, offer_uri:string }
-    console.log("DidComm Offer erhalten: ", body, "\n")
-    preauth_flow(body.offer_uri)
     res.sendStatus(200)
   }
   else {
@@ -81,89 +72,65 @@ server.listen(8081, () => {
 const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
 console.log("Scanne QR-Code....")
 
-// Wenn SIOP-Anfrage, dann erst SIOP-Flow. Wenn Preauth-Code, dann gleich OID4VC-Flow
-if (response.protocol == "openid-vc:"){
-  const request_uri = response.searchParams.get("request_uri")!
-  await siop_flow(request_uri)
+const offer_uri = response.toString()
+
+// Client erstellen
+console.log("Preauth Code erhalten: ", offer_uri,"\n")
+const client = await OpenID4VCIClient.fromURI({
+    uri: offer_uri,
+    flowType: AuthzFlowType.PRE_AUTHORIZED_CODE_FLOW,
+    alg: Alg.EdDSA,
+    retrieveServerMetadata: true,
+})
+
+// Token holen
+console.log("Hole Token....")
+const token = await client.acquireAccessToken()
+console.log("Token erhalten:", token, "\n\n")
+
+// JWT-Proof bauen
+const jwt_header = encodeBase64url(JSON.stringify({
+  typ: "openid4vci-proof+jwt",
+  alg: client.alg,
+  kid: global_key_id
+}))
+
+console.log("issuer: ",client.getIssuer())
+const jwt_payload = encodeBase64url(JSON.stringify({
+  aud: client.getIssuer(),
+  iat: Math.floor(Date.now() / 1000),
+  nonce: token.c_nonce,
+  iss: global_key_id
+}))
+
+const signature = await agent.keyManagerSign({
+  keyRef: local_key_id,
+  data: jwt_header+"."+jwt_payload,
+  algorithm: client.alg
+})
+
+const proof: ProofOfPossession = {
+  proof_type: "jwt",
+  jwt: jwt_header +'.'+ jwt_payload +'.'+ signature
 }
-else if (response.protocol == "openid-credential-offer:"){
-  await preauth_flow(response.toString())
-}
+console.log("Proof:\n",proof)
 
-/*************/
-/* SIOP FLOW */
-/*************/
-async function siop_flow(req_reference: string){
-  console.log("SIOP-Referenz erhalten: ", req_reference, "\n")
+// Credential Anfrage senden
+console.log("Hole Credential....")
+const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({request: client.credentialOffer, metadata: client.endpointMetadata}).build()
+let credentialRequest = await credentialRequestClient.createCredentialRequest({
+  proofInput: proof,
+  credentialTypes: ["VerifiableCredential","UniversityDegreeCredential"],
+  format: 'jwt_vc_json',
+  version: OpenId4VCIVersion.VER_1_0_11
+})
 
-  // SIOP-Anfrage holen
-  console.log("Folge Referenz....")
-  const request = await (await fetch(req_reference)).json() as IAuthorizationRequestPayloads
-  console.log("SIOP-Anfrage erhalten: ", request, "\n")
+Object.defineProperty(credentialRequest, "didcomm_proof", {value: proof, enumerable: true})
+const credentialResponse = await credentialRequestClient.acquireCredentialsUsingRequest(credentialRequest)
 
-  // ID-Token zurück senden
-  console.log("Sende ID-Token....")
-  const siop_session = await agent.siopRegisterOPSession({ requestJwtOrUri: request.requestObject! })
-  await siop_session.getAuthorizationRequest()
-  await siop_session.sendAuthorizationResponse({responseSignerOpts: { identifier: identifier }})
-}
-
-/***************/
-/* OID4VC FLOW */
-/***************/
-async function preauth_flow(offer_uri: string){
-  // Client erstellen
-  console.log("Preauth Code erhalten: ", offer_uri,"\n")
-  const client = await OpenID4VCIClient.fromURI({
-      uri: offer_uri,
-      flowType: AuthzFlowType.PRE_AUTHORIZED_CODE_FLOW,
-      alg: Alg.EdDSA,
-      retrieveServerMetadata: true,
-  })
-
-  // Token holen
-  console.log("Hole Token....")
-  const token = await client.acquireAccessToken()
-  console.log("Token erhalten:", token, "\n\n")
-
-  // JWT-Proof bauen
-  const jwt_header = encodeBase64url(JSON.stringify({
-    typ: "openid4vci-proof+jwt",
-    alg: client.alg,
-    kid: global_key_id
-  }))
-
-  console.log("issuer: ",client.getIssuer())
-  const jwt_payload = encodeBase64url(JSON.stringify({
-    aud: client.getIssuer(),
-    iat: Math.floor(Date.now() / 1000),
-    nonce: token.c_nonce,
-    iss: global_key_id
-  }))
-
-  const signature = await agent.keyManagerSign({
-    keyRef: local_key_id,
-    data: jwt_header+"."+jwt_payload,
-    algorithm: client.alg
-  })
-
-  const proof: ProofOfPossession = {
-    proof_type: "jwt",
-    jwt: jwt_header +'.'+ jwt_payload +'.'+ signature
-  }
-  console.log("Proof:\n",proof)
-
-  // Credential Anfrage senden
-  console.log("Hole Credential....")
-  const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({request: client.credentialOffer, metadata: client.endpointMetadata}).build()
-  const credentialResponse = await credentialRequestClient.acquireCredentialsUsingProof({
-    proofInput: proof,
-    credentialTypes: ["VerifiableCredential","UniversityDegreeCredential"],
-    format: 'jwt_vc_json',
-  });
-
-  // Credential
+// Credential
+if (credentialResponse.successBody) {
   const credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
-  if (!credentialResponse.errorBody) console.log("Credential erhalten:\n", credential)
-  else console.log("Credential Error: ", credentialResponse.errorBody)
+  console.log("Credential erhalten:\n", credential)
 }
+else console.log("Credential Error: ", credentialResponse.errorBody)
