@@ -57,7 +57,8 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
     res.sendStatus(404)
   }
 })
-server.listen(8081, () => {
+
+const server_instance = server.listen(8081, () => {
   console.log("Server listening on port 8081\n\n")
 })
 
@@ -80,6 +81,7 @@ const client = await OpenID4VCIClient.fromURI({
   alg: Alg.EdDSA,
   retrieveServerMetadata: true,
 })
+console.log("Server Metadata: ", JSON.stringify(client.endpointMetadata, null, 2), "\n")
 
 // Token holen
 console.log("Hole Token....")
@@ -132,3 +134,6 @@ if (credentialResponse.successBody) {
   console.log("Credential erhalten:\n", credential)
 }
 else console.log("Credential Error: ", credentialResponse.errorBody)
+
+// close Server
+server_instance.close()
