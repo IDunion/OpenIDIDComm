@@ -1,14 +1,14 @@
 // Core interfaces
 import {
-    createAgent,
-    IDIDManager,
-    IResolver,
-    IDataStore,
-    IDataStoreORM,
-    IKeyManager,
-    ICredentialPlugin,
-    IMessageHandler,
-    ICredentialVerifier
+  createAgent,
+  IDIDManager,
+  IResolver,
+  IDataStore,
+  IDataStoreORM,
+  IKeyManager,
+  ICredentialPlugin,
+  IMessageHandler,
+  ICredentialVerifier
 } from '@veramo/core'
 
 // Core identity manager plugin
@@ -56,13 +56,13 @@ const KMS_SECRET_KEY = '29739248cad1bd1a0fc4d9b75cd4d2990de535baf5caadfdf8d8f866
 
 
 const dbConnection = new DataSource({
-    type: 'sqlite',
-    database: DATABASE_FILE,
-    synchronize: false,
-    migrations,
-    migrationsRun: true,
-    logging: ['error', 'info', 'warn'],
-    entities: Entities,
+  type: 'sqlite',
+  database: DATABASE_FILE,
+  synchronize: false,
+  migrations,
+  migrationsRun: true,
+  logging: ['error', 'info', 'warn'],
+  entities: Entities,
 }).initialize()
 
 
@@ -89,44 +89,48 @@ export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataS
       resolver: resolvers
     }),
     new CredentialPlugin(),
-    new OID4VCIIssuer({ defaultStoreId: "_default", defaultNamespace: "oid4vci", resolveOpts: {resolver: resolvers} }),
-    new OID4VCIStore({ 
-      importMetadatas: [{ 
-        metadata: { 
-          credential_issuer: "http://localhost:8080", 
-          credentials_supported: [{ format: "jwt_vc_json", types: ["VerifiableCredential","UniversityDegreeCredential"]}], 
+    new OID4VCIIssuer({ defaultStoreId: "_default", defaultNamespace: "oid4vci", resolveOpts: { resolver: resolvers } }),
+    new OID4VCIStore({
+      importMetadatas: [{
+        metadata: {
+          credential_issuer: "http://localhost:8080",
+          credentials_supported: [Object.defineProperty({ format: "jwt_vc_json", types: ["VerifiableCredential", "UniversityDegreeCredential"] }, "didcommRequired", {value: "Required", enumerable: true})],
           credential_endpoint: "http://localhost:8080/credentials",
           token_endpoint: "http://localhost:8080/token"
-        }, 
-        correlationId: "123" 
+        },
+        correlationId: "123"
       }]
     }),
     new SIOPv2RP({
-      defaultOpts: {didOpts: {identifierOpts: {
-          identifier: {
-            "did":"did:web:void1042.github.io:web-did-host:issuer",
-            "controllerKeyId":"5932972c2e8740dcb81daecad3cff781630401659a896a12f4d928d65d044d58",
-            "provider":"did:web",
-            "services":[
-               
-            ],
-            "keys":[
-               {
-                  "kid":"5932972c2e8740dcb81daecad3cff781630401659a896a12f4d928d65d044d58",
-                  "type":"Ed25519",
-                  "kms":"local",
-                  "publicKeyHex":"5932972c2e8740dcb81daecad3cff781630401659a896a12f4d928d65d044d58",
-                  "meta":{
-                     "algorithms":[
-                        "EdDSA",
-                        "Ed25519"
-                     ]
+      defaultOpts: {
+        didOpts: {
+          identifierOpts: {
+            identifier: {
+              "did": "did:web:void1042.github.io:web-did-host:issuer",
+              "controllerKeyId": "5932972c2e8740dcb81daecad3cff781630401659a896a12f4d928d65d044d58",
+              "provider": "did:web",
+              "services": [
+
+              ],
+              "keys": [
+                {
+                  "kid": "5932972c2e8740dcb81daecad3cff781630401659a896a12f4d928d65d044d58",
+                  "type": "Ed25519",
+                  "kms": "local",
+                  "publicKeyHex": "5932972c2e8740dcb81daecad3cff781630401659a896a12f4d928d65d044d58",
+                  "meta": {
+                    "algorithms": [
+                      "EdDSA",
+                      "Ed25519"
+                    ]
                   }
-               }
-            ],
-            "alias":"void1042.github.io:web-did-host:issuer"
-         }        
-      }}}
+                }
+              ],
+              "alias": "void1042.github.io:web-did-host:issuer"
+            }
+          }
+        }
+      }
     }),
     new MessageHandler({ messageHandlers: [new DIDCommMessageHandler()] }),
     new DIDComm([new DIDCommHttpTransport()])
