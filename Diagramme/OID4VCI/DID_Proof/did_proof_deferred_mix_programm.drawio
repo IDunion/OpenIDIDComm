@@ -1,0 +1,131 @@
+<mxfile host="app.diagrams.net" modified="2024-01-16T14:50:30.927Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" etag="pLFldxGIryCjhzfFl-Mv" version="22.1.18" type="device">
+  <diagram name="Seite-1" id="R79wlwKEMcs8Z8FNsgyE">
+    <mxGraphModel dx="2261" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-42" value="Timout" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontColor=#FF3333;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-2" target="-ZPo1rk-SbUIKT_IbPIJ-40">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="55" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-2" value="Credential Request" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="40" width="260" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-8" value="False" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-27" target="-ZPo1rk-SbUIKT_IbPIJ-9">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="388.75" as="sourcePoint" />
+            <mxPoint x="420" y="183.75" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-12" value="DIDComm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-2" target="-ZPo1rk-SbUIKT_IbPIJ-18">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="160" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="280" y="110" />
+              <mxPoint x="280" y="110" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-14" value="Credential&lt;br&gt;Processing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-2" target="-ZPo1rk-SbUIKT_IbPIJ-11">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="160" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="150" y="120" />
+              <mxPoint x="150" y="120" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-9" value="ClearTimeout(timeoutID)&lt;br&gt;Credential Response" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="590" y="528.75" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-11" value="Set Transaction_ID Record&lt;br&gt;(PENDING,?)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="160" width="120" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-22" value="Credential Done" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-11" target="-ZPo1rk-SbUIKT_IbPIJ-23">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="100" y="500" as="targetPoint" />
+            <mxPoint x="80" y="380" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-25" value="DIDComm ACK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-18" target="-ZPo1rk-SbUIKT_IbPIJ-24">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="220" y="390" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-15" value="&lt;b&gt;Record&lt;/b&gt;:&lt;br&gt;- TransactionID&lt;br&gt;- CredentialState:&lt;br&gt;&lt;span style=&quot;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;/span&gt;PENDING&lt;br&gt;&lt;span style=&quot;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;/span&gt;READY&lt;br&gt;&lt;span style=&quot;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;/span&gt;ERROR&lt;br&gt;- EstimatedFinish:&lt;br&gt;&amp;nbsp; &amp;nbsp; sec for cred to be ready&lt;br&gt;- Credential:&lt;br&gt;&amp;nbsp; &amp;nbsp; null or credential&lt;br&gt;- DIDCommState:&lt;br&gt;&lt;span style=&quot;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;/span&gt;PENDING&lt;br&gt;&lt;span style=&quot;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;/span&gt;READY&lt;br&gt;&lt;span style=&quot;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;/span&gt;ERROR&lt;br&gt;&lt;div style=&quot;&quot;&gt;- DID:&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&amp;nbsp; &amp;nbsp; did:example:...&lt;/div&gt;&lt;div style=&quot;&quot;&gt;- TmeoutTriggered:&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&amp;nbsp; &amp;nbsp; false/true&lt;/div&gt;&lt;div style=&quot;&quot;&gt;- TimeoutID:&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&amp;nbsp; &amp;nbsp; id&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;align=left;arcSize=7;" vertex="1" parent="1">
+          <mxGeometry x="-290" y="180" width="160" height="310" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-18" value="Set Transaction_ID Record&lt;br&gt;(?,PENDING)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="240" y="160" width="120" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-47" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-23" target="-ZPo1rk-SbUIKT_IbPIJ-46">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-23" value="Update Record:&lt;br&gt;(PENDING,?)&lt;br&gt;=&amp;gt;&lt;br&gt;(READY,?)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="310" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-48" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-24" target="-ZPo1rk-SbUIKT_IbPIJ-46">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-24" value="Update Record:&lt;br&gt;(?,PENDING)&lt;br&gt;=&amp;gt;&lt;br&gt;(?,READY)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="240" y="310" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-43" value="True" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-27" target="-ZPo1rk-SbUIKT_IbPIJ-41">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-27" value="Timout?" style="rounded=1;whiteSpace=wrap;html=1;fontColor=#FF3333;" vertex="1" parent="1">
+          <mxGeometry x="510" y="429.38" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-36" value="Credential- and DIDCommStaet READY" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-33" target="-ZPo1rk-SbUIKT_IbPIJ-34">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-60" y="640" />
+              <mxPoint x="-60" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-37" value="Credential- or DIDCommState PENDING" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-33" target="-ZPo1rk-SbUIKT_IbPIJ-35">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="40" y="710" />
+              <mxPoint x="40" y="710" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-39" value="Credential- or DIDCommState ERROR" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-33" target="-ZPo1rk-SbUIKT_IbPIJ-38">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-50" y="790" />
+              <mxPoint x="-50" y="790" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-33" value="Deferred Credential Request (Transaction_ID)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-250" y="625" width="130" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-34" value="Deferred Credential Response with Credential" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="610" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-35" value="Deferred Credential Error (issuance_pending, interval=?)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="680" width="185" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-38" value="Deferred Credential Error (Somthing went wrong)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="760" width="185" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-40" value="Send Credential Response with Transaction_ID and estimated finish time" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="470" y="15" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-41" value="Send Notification via DIDComm" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="420" y="528.75" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-49" value="Credential- and DIDCommstate READY" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="-ZPo1rk-SbUIKT_IbPIJ-46" target="-ZPo1rk-SbUIKT_IbPIJ-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="-ZPo1rk-SbUIKT_IbPIJ-46" value="TrySend()" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="432.5" width="120" height="33.75" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

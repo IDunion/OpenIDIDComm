@@ -46,9 +46,10 @@ Authorization: BEARER ...
 }
   end rnote
   group DIDComm
-    Wallet <- CI: Ping
+    Wallet <- CI: Ping (nonce)
     Wallet -> CI: Acknowledge
   end
+  Wallet <- CI: Credential Response (Credential)
 else Without DIDComm
   Wallet -> CI: Credential Request (token, proof(s))
   rnote right of Wallet #FFFFFF
@@ -66,7 +67,6 @@ Authorization: BEARER ...
   }
 }
   end rnote
+  Wallet <- CI: Credential Response (Credential)
 end
-
-Wallet <- CI: Credential
 @enduml

@@ -25,19 +25,22 @@ end rnote
 
 ...
 
-Wallet -> CI: Authorization Request
-Wallet <- CI: Authorization Response
-
-...
-
-Wallet -> CI: Token Request
-Wallet <- CI: Token Response (with nonce)
-
-...
-
-group DIDComm
-  Wallet -> CI: Ping
-  Wallet <- CI: Acknowledge (one-time-code)
+par
+  alt Authorized Flow
+    Wallet -> CI: Authorization Request \n(type(s) of Credentials to be issued)
+    Wallet <- CI: Authorization Response (code)
+    ...
+    Wallet -> CI: Token Request (code)
+    Wallet <- CI: Token Response (token)
+  else Pre-Authorized Flow
+    Wallet -> CI: Token Request (Pre-Auth-Code, pin)
+    Wallet <- CI: Token REsponse (token)
+  end
+else
+  group DIDComm
+    Wallet -> CI: Ping
+    Wallet <- CI: Acknowledge (one-time-code)
+  end
 end
 
 ...
@@ -59,5 +62,10 @@ Authorization: BEARER ...
   }
 }
 end rnote
-Wallet <- CI: Credential Response
+CI -> CI: Check for valid \nDIDComm Connection \nwith given one-time-code
+alt Check successful
+  Wallet <- CI: Credential Response (Credential)
+else Check failed
+  Wallet <- CI: Credential Error Response \n(No DIDComm Connection)
+end
 @enduml
