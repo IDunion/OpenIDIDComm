@@ -67,6 +67,17 @@ Optional:
 
 ![OID4VC Diagram](/Diagramme/OID4VCI/DID_Proof/did_proof.png)
 
-This solution could also be applied to OID4VP.
+In order to prevent timeout related problems it is possible to use the [Deferred Credential Endpoint](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-deferred-credential-endpoint) preferred as a fallback solution.
+
+![OID4VC Diagram](/Diagramme/OID4VCI/DID_Proof/did_proof_deferred.png)
+
+
+These solutions could also be applied to OID4VP.
 
 ![OID4VC Diagram](/Diagramme/OID4VP/SIOP/vp_siop.png)
+
+### Seperate DIDComm
+
+It is also possible to create a separate DIDComm connection parallel to the usual (pre-)authorized flow. This solution uses one-time-codes or pseudorandom numbers in order to synch the DIDComm Connection.
+
+![OID4VC Diagram](/Diagramme/OID4VCI/DIDComm_Separated/didcomm_separated.png)
