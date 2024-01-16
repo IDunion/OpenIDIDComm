@@ -1,0 +1,63 @@
+@startuml
+!theme vibrant
+!pragma teoz true
+title "OID4VC + DIDComm separated"
+participant Wallet
+participant "Issuer" as CI
+skinparam ParticipantPadding 75
+skinparam sequenceMessageAlign reverseDirection
+
+Wallet <-> CI: Obtain Issuer metadata
+rnote left of CI #FFFFFF
+{
+  <color green>"didcomm_did":"did:example:issuer"</color>,
+  credentials_supported: [{
+    "id": "UniverseityDegree_JWT",
+    "credential_definition": {
+      "name": {...},
+      "degree: {...}
+    },
+    <color green>"didcomm_required":"REQUIRED"</color>
+  },
+  {...}]
+}
+end rnote
+
+...
+
+Wallet -> CI: Authorization Request
+Wallet <- CI: Authorization Response
+
+...
+
+Wallet -> CI: Token Request
+Wallet <- CI: Token Response (with nonce)
+
+...
+
+group DIDComm
+  Wallet -> CI: Ping
+  Wallet <- CI: Acknowledge (one-time-code)
+end
+
+...
+
+Wallet -> CI: Credential Request (token, proof(s), <color green>one-time-code</color>)
+rnote right of Wallet #FFFFFF
+POST /credential HTTP/1.1
+Host: server.example.com
+Content-Type: application/json
+Authorization: BEARER ...
+<color green>DIDComm-Secret: <one-time-code></color>
+
+{
+  "format":"mso_mdoc",
+  "doctype":"org.iso.18013.5.1.mDL",
+  "proof": {
+    "proof_type": "cwt",
+    "cwt": "..."
+  }
+}
+end rnote
+Wallet <- CI: Credential Response
+@enduml

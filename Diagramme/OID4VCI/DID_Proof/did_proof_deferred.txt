@@ -1,0 +1,61 @@
+@startuml
+!theme vibrant
+!pragma teoz true
+title "OID4VC + DID Proof Deferred"
+participant Wallet
+participant "Issuer" as CI
+skinparam ParticipantPadding 75
+skinparam sequenceMessageAlign reverseDirection
+
+Wallet <-> CI: Obtain Issuer metadata
+rnote left of CI #FFFFFF
+{
+  credentials_supported: [{
+    "id": "UniverseityDegree_JWT",
+    "credential_definition": {
+      "name": {...},
+      "degree: {...}
+    },
+    <color green>"didcomm_required":"REQUIRED"</color>
+  },
+  {...}]
+}
+end rnote
+
+... <size:20>**...**</size> ...
+
+Wallet -> CI: Credential Request (token, proof(s), <color green>didcomm_proof</color>)
+rnote right of Wallet #FFFFFF
+POST /credential HTTP/1.1
+Host: server.example.com
+Content-Type: application/json
+Authorization: BEARER ...
+
+{
+  "format":"mso_mdoc",
+  "doctype":"org.iso.18013.5.1.mDL",
+  "proof": {
+    "proof_type": "cwt",
+    "cwt": "..."
+  },
+  <color green>"didcomm_proof": {</color>
+    <color green>"proof_type": "jwt",</color>
+    <color green>"jwt": "..."</color>
+  <color green>}</color>
+}
+end rnote
+Wallet <- CI: Credential Response (transaction_id)
+group try [DIDComm Connection]
+  group DIDComm
+    Wallet <- CI: Ping (nonce)
+    Wallet -> CI: Acknowledge
+    ... Credential creation/processing ...
+    Wallet <- CI: Notify Credential Ready
+  end
+  Wallet -> CI: Deferred Credential Request (transaction_id)
+  Wallet <- CI: Deferred Credential Response \n(With Credential)
+else Catch DIDComm Error
+  Wallet -> CI: Deferred Credential Request (transaction_id)
+  Wallet <- CI: Credential Error Response \n(No DIDComm Connection possible)
+end
+@enduml
