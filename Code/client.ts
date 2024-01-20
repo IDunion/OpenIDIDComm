@@ -1,5 +1,5 @@
 import { OpenID4VCIClient } from '@sphereon/oid4vci-client';
-import { AuthzFlowType, Alg, OpenId4VCIVersion } from '@sphereon/oid4vci-common'
+import { AuthzFlowType, Alg, OpenId4VCIVersion, OpenIDResponse, CredentialResponse } from '@sphereon/oid4vci-common'
 import { CredentialRequestClientBuilder } from '@sphereon/oid4vci-client';
 import { ProofOfPossession } from '@sphereon/oid4vci-common';
 import { agent } from './client_agent.js'
@@ -8,6 +8,10 @@ import { mapIdentifierKeysToDoc, decodeBase64url, encodeBase64url } from '@veram
 import { IDIDCommMessage } from '@veramo/did-comm';
 import express, { Express, Request, Response } from 'express'
 import bodyParser from 'body-parser'
+
+const red = "\x1b[41m"
+const green = "\x1b[42m"
+const end = "\x1b[0m"
 
 /*********/
 /* SETUP */
@@ -115,7 +119,7 @@ const proof: ProofOfPossession = {
 }
 console.log("Proof:\n", proof)
 
-// Credential Anfrage senden
+// Credential Anfrage
 console.log("Hole Credential....")
 const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({ request: client.credentialOffer, metadata: client.endpointMetadata }).build()
 let credentialRequest = await credentialRequestClient.createCredentialRequest({
@@ -124,14 +128,55 @@ let credentialRequest = await credentialRequestClient.createCredentialRequest({
   format: 'jwt_vc_json',
   version: OpenId4VCIVersion.VER_1_0_11
 })
-
 Object.defineProperty(credentialRequest, "didcomm_proof", { value: proof, enumerable: true })
-const credentialResponse = await credentialRequestClient.acquireCredentialsUsingRequest(credentialRequest)
 
-// Credential
+// Antwort entweder Credential oder Deferral
+type DeferredResponse = { transaction_id:string, c_nonce:string }
+const credentialResponse = await credentialRequestClient.acquireCredentialsUsingRequest(credentialRequest) as OpenIDResponse<CredentialResponse|DeferredResponse>
+
 if (credentialResponse.successBody) {
-  const credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
-  console.log("Credential erhalten:\n", credential)
+  if("transaction_id" in credentialResponse.successBody){
+    console.log("Deferral erhalten. Versuche alle 1 sek.:")
+    const {transaction_id, c_nonce} = credentialResponse.successBody
+
+    // Loop
+    const intervalID = setInterval(async () => {
+      console.log("> Frage Status ab....")
+      const response = await fetch("http://localhost:8080/deferred", {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
+
+      if (response.ok){
+        const data = await response.json() as { credential:string }
+        const credential = JSON.parse(decodeBase64url(data.credential.split(".")[1]))
+        console.log(green,"< Credential erhalten:",end,"\n",credential)
+        clearInterval(intervalID) //Stop Loop
+      }
+      else{
+        const {error} = await response.json() as { error:string }
+        
+        switch (error) {
+          case "issuance_pending":
+            console.log("< Credential noch nicht bereit")
+            break
+          case "didcomm_unreachable":
+            console.error(red,"DidComm Verbindung fehlgeschlagen",end)
+            clearInterval(intervalID)
+            break
+          case "invalid_transaction_id":
+            console.error(red,"Credential nicht gefunden",end)
+            clearInterval(intervalID)
+            break
+          default:
+            console.error(red,"Unbekannter Fehler",end)
+            clearInterval(intervalID)
+            break
+        }
+      }
+    }, 1000)
+  }
+  else{
+    const credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
+    console.log(green,"Credential erhalten:",end,"\n", credential)
+  }
 }
 else console.log("Credential Error: ", credentialResponse.errorBody)
 
