@@ -1,0 +1,30 @@
+@startuml
+!theme vibrant
+!pragma teoz true
+title "OID4VP + DIDComm Separated"
+participant Verifier
+participant Wallet
+skinparam ParticipantPadding 75
+
+par
+  Verifier -> Wallet: Authorization Request + Metadata (<color green>verifier_did</color>)
+  Wallet <- Wallet: Auth./Consent
+  Verifier <- Wallet: Authorization Response (VP, <color green>one-time-code</color>)
+  rnote left of Wallet #FFFFFF
+  HTTP/1.1 302 Found
+    Location: https://client.example.org/cb#
+      presentation_submission=...
+      &vp_token=...
+      <color green>&DIDComm-Secret: <one-time-code></color>
+  end rnote
+else
+  group DIDComm
+     Verifier <- Wallet: Ping (one-time-code)
+     Verifier -> Wallet: Acknowledge
+  end
+end
+... Possible waiting time until \nDIDComm Channel is established ...
+Verifier -> Verifier: Check for valid \nDIDComm Connection \nwith given one-time-code
+...
+Verifier -> Verifier: Further Valididation
+@enduml
