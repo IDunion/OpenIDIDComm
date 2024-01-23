@@ -86,10 +86,10 @@ It is also possible to create a separate DIDComm connection parallel to the usua
 
 ||DID JWT without Deferred Credential Endpoint|DID JWT with Deferred Credential Endpoint|Separate DIDComm|
 |---|---|---|---|
-|Support of both flows (Authorization and pre-authorized)|&check|&check|&check|
-|Enforce DIDComm|&check|&check|&check|
-|Optional DIDComm|&check|&check|&check|
-|Timeout handling|&cross|&check|&check - parallel establishment of DIDComm|
+|Support of both flows (Authorization and pre-authorized)|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|Enforce DIDComm|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|Optional DIDComm|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|Timeout handling|:x:|:heavy_check_mark:|:heavy_check_mark: - parallel establishment of DIDComm|
 |Message modification|Body (Header possible)|Body (Header possible)|Header|
 
 
