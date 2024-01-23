@@ -1,7 +1,23 @@
 # Openidcomm
 
 [[_TOC_]]
+# Onboarding
 
+To familiarize yourself with the topic, it is worth taking a look at the following sources:
+
+### OpenID4VC
+
+To understand OpenID4VC, it is helpful to first understand OAuth and OpenID Connect. A look at the official documentations could help:
+
+- [OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749) 
+    - for a brief overview, just have a brief look at [OAuth 2.0 simplified](https://aaronparecki.com/oauth-2-simplified/)
+- [OpenID Connect](https://openid.net/developers/how-connect-works/)
+
+Finally, the OpenID4VC spec defines subtleties in relation to verifiable credentials:
+- [OpenID4VC](https://openid.github.io/OpenID4VCI/openid-4-verifiable-credential-issuance-wg-draft.html)
+
+
+---
 # Background
 ### OAuth2
 ![Oauth2](/Diagramme/OAuth2/oauth2.png)
