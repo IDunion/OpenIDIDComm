@@ -10,12 +10,26 @@ To familiarize yourself with the topic, it is worth taking a look at the followi
 To understand OpenID4VC, it is helpful to first understand OAuth and OpenID Connect. A look at the official documentations could help:
 
 - [OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749) 
-    - for a brief overview, just have a brief look at [OAuth 2.0 simplified](https://aaronparecki.com/oauth-2-simplified/)
+    - for a brief overview, just have a look at [OAuth 2.0 simplified](https://aaronparecki.com/oauth-2-simplified/)
 - [OpenID Connect](https://openid.net/developers/how-connect-works/)
 
-Finally, the OpenID4VC spec defines subtleties in relation to verifiable credentials:
-- [OpenID4VC](https://openid.github.io/OpenID4VCI/openid-4-verifiable-credential-issuance-wg-draft.html)
+Finally, the [OpenID4VC spec](https://openid.net/sg/openid4vc/specifications/) defines subtleties in relation to verifiable credentials:
+- [OpenID4VCI](https://openid.github.io/OpenID4VCI/openid-4-verifiable-credential-issuance-wg-draft.html)
+- [OpenID4VP](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-wg-draft.html)
 
+### DIDComm
+
+The DIDComm Protocol is a messaging protocol based on Decentralized Identifiers (DIDs). It is essential to understand the idea behind DIDs, DID Documents, and DID resolution to know how DIDComm works. The following links provide a good overview over these topics:
+- [DIDs](https://norbert-pohlmann.com/glossar-cyber-sicherheit/decentralized-identifiers/)
+    - A short summary for the most important functionality of DIDs (on german)
+- [DID Specification](https://www.w3.org/TR/did-core/)
+    - A basic understanding can be achieved by looking at the [simple Example](https://www.w3.org/TR/did-core/#a-simple-example), the [architecture overview](https://www.w3.org/TR/did-core/#architecture-overview), and diving into the [DID Documents Examples](https://www.w3.org/TR/did-core/#did-documents)
+    - To further learn about the meaning of the DID Document propoerties we recommend reading the chapter [core properties](https://www.w3.org/TR/did-core/#core-properties) with a focus on the different verification methods, relationships, and the service propertie
+    - When translating DIDs into DID Documents one has to understand the process of [DID Resolution](https://www.w3.org/TR/did-core/#resolution) (Chapter 7.1 without subchapters is enough!). It is very helpful to read about the resolution rules of some DID methods such as [did:peer](https://identity.foundation/peer-did-method-spec/) and [did:web](https://w3c-ccg.github.io/did-method-web/)
+- [DIDComm Specification](https://identity.foundation/didcomm-messaging/spec/)
+    - After learning how DIDs work and what information is stored inside DID Documents it is fairly straight forward to read the DIDComm Specification
+
+### TODO: write custom summary of above topics for newcomers
 
 ---
 # Background
