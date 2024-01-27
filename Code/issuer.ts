@@ -121,6 +121,7 @@ server.post("/credentials", bodyParser.json(), async (req: Request, res: Respons
     else {
         defered_creds[deferal.transaction_id].status = "READY"
         defered_creds[deferal.transaction_id].credential = credential
+        await send_didcomm_msg(rcpt_did, identifier.did, "credential_ready", {transaction_id: deferal.transaction_id})
     }
 })
 
@@ -232,22 +233,13 @@ async function establish_didcomm_connection(to:string, nonce:string){
     for (let i = 0; i < 3; i++){
         console.log("Versuch ",String(i),": Sende DidComm Ping zu '"+ to +"'....")
 
-        var message: IDIDCommMessage = {
-            type: "ping",
-            to: to,
-            from: identifier.did,
-            id: Math.random().toString().slice(2, 5),
-            body: { nonce: nonce }
-        }
-
-        var packed_msg = await agent.packDIDCommMessage({ message: message, packing: "authcrypt" })
-        await agent.sendDIDCommMessage({ messageId: message.id, packedMessage: packed_msg, recipientDidUrl: message.to })
+        var message_id = await send_didcomm_msg(to, identifier.did, "ping", { nonce:nonce })
 
         // Promise mit Timeout von 2+i Sekunde und globaler acknowledge-Funktion
         var timeoutID: NodeJS.Timeout
         var pending_ping = new Promise((resolve, reject) => {
             timeoutID = setTimeout(reject, 2000+(i*1000));
-            pending_pings[message.id] = { acknowledge: () => {clearTimeout(timeoutID); resolve("")} };
+            pending_pings[message_id] = { acknowledge: () => {clearTimeout(timeoutID); resolve("")} };
         })
 
         try {
@@ -261,4 +253,19 @@ async function establish_didcomm_connection(to:string, nonce:string){
     }
 
     return true
+}
+
+async function send_didcomm_msg( to:string, from:string, type:string, body:Object ):Promise<string> {
+    const message: IDIDCommMessage = {
+        type: type,
+        to: to,
+        from: from,
+        id: Math.random().toString().slice(2, 5),
+        body: body
+    }
+
+    const packed_msg = await agent.packDIDCommMessage({ message: message, packing: "authcrypt" })
+    await agent.sendDIDCommMessage({ messageId: message.id, packedMessage: packed_msg, recipientDidUrl: message.to })
+
+    return message.id
 }

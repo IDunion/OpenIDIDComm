@@ -8,6 +8,8 @@ import { mapIdentifierKeysToDoc, decodeBase64url, encodeBase64url } from '@veram
 import { IDIDCommMessage } from '@veramo/did-comm';
 import express, { Express, Request, Response } from 'express'
 import bodyParser from 'body-parser'
+import { W3CVerifiableCredential } from '@veramo/core';
+import { W3cMessageHandler } from '@veramo/credential-w3c';
 
 const red = "\x1b[41m"
 const green = "\x1b[42m"
@@ -37,9 +39,11 @@ const global_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod
 /**********/
 const server: Express = express()
 
+var i=0
 /* Hier kommt die kommt die DidComm Verbindungsanfrage an */
 server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
   const message = await agent.handleMessage({ raw: req.body.toString() })
+  res.sendStatus(202)
 
   if (message.type == "ping") {
     console.log("DidComm Ping erhalten: {id:" + message.id + ", thid:" + message.threadId + ", data:" + JSON.stringify(message.data) + "}")
@@ -52,13 +56,27 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
       body: {}
     }
 
-    console.log("Sende Pong....")
-    const packed_msg = await agent.packDIDCommMessage({ message: response, packing: "authcrypt" })
-    agent.sendDIDCommMessage({ messageId: "123", packedMessage: packed_msg, recipientDidUrl: message.from! })
-    res.sendStatus(200)
+    if (i == 2){
+      console.log("Sende Pong....")
+      const packed_msg = await agent.packDIDCommMessage({ message: response, packing: "authcrypt" })
+      agent.sendDIDCommMessage({ messageId: "123", packedMessage: packed_msg, recipientDidUrl: message.from! })
+    }
+    i++
   }
-  else {
-    res.sendStatus(404)
+  else if (message.type == "credential_ready"){
+    const transaction_id = (message.data! as {transaction_id:string}).transaction_id
+    console.log("DidComm Credential #",transaction_id," bereit")
+
+    // Abholung
+    const response = await fetch("http://localhost:8080/deferred", {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
+    if (response.ok){
+      const data = await response.json() as { credential:string }
+      early_resolve(JSON.parse(decodeBase64url(data.credential.split(".")[1])))
+    }
+    else{
+      const {error} = await response.json() as { error:string }
+      if (error != "issuance_pending") early_reject(error)
+    }
   }
 })
 
@@ -70,6 +88,10 @@ const server_instance = server.listen(8081, () => {
 /***************/
 /* CLIENT FLOW */
 /***************/
+
+var credential: W3CVerifiableCredential | undefined
+var early_resolve: (val:W3CVerifiableCredential) => void
+var early_reject: (error:any) => void
 
 // Scanne QR-Code
 const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
@@ -136,47 +158,33 @@ const credentialResponse = await credentialRequestClient.acquireCredentialsUsing
 
 if (credentialResponse.successBody) {
   if("transaction_id" in credentialResponse.successBody){
-    console.log("Deferral erhalten. Versuche alle 1 sek.:")
-    const {transaction_id, c_nonce} = credentialResponse.successBody
+    console.log("Deferral erhalten. Versuche alle 10 sek.:")
+    var {transaction_id, c_nonce} = credentialResponse.successBody
 
-    // Loop
-    const intervalID = setInterval(async () => {
-      console.log("> Frage Status ab....")
-      const response = await fetch("http://localhost:8080/deferred", {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
+    credential = await new Promise<W3CVerifiableCredential>(async (res,rej) => {
+      let stop = false
+      early_resolve = (val:W3CVerifiableCredential) => {stop = true; res(val)}
+      early_reject = (error:any) => {stop = true; rej(error)}
 
-      if (response.ok){
-        const data = await response.json() as { credential:string }
-        const credential = JSON.parse(decodeBase64url(data.credential.split(".")[1]))
-        console.log(green,"< Credential erhalten:",end,"\n",credential)
-        clearInterval(intervalID) //Stop Loop
-      }
-      else{
-        const {error} = await response.json() as { error:string }
-        
-        switch (error) {
-          case "issuance_pending":
-            console.log("< Credential noch nicht bereit")
-            break
-          case "didcomm_unreachable":
-            console.error(red,"DidComm Verbindung fehlgeschlagen",end)
-            clearInterval(intervalID)
-            break
-          case "invalid_transaction_id":
-            console.error(red,"Credential nicht gefunden",end)
-            clearInterval(intervalID)
-            break
-          default:
-            console.error(red,"Unbekannter Fehler",end)
-            clearInterval(intervalID)
-            break
+      while (!stop){
+        const response = await fetch("http://localhost:8080/deferred", {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
+        if (response.ok){
+          const data = await response.json() as { credential:string }
+          return res(JSON.parse(decodeBase64url(data.credential.split(".")[1])))
         }
+        else{
+          const {error} = await response.json() as { error:string }
+          if (error != "issuance_pending") return rej(error)
+        }
+
+        await new Promise(r => setTimeout(r, 10000));
       }
-    }, 1000)
+    })
   }
   else{
-    const credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
-    console.log(green,"Credential erhalten:",end,"\n", credential)
+    credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
   }
+  console.log(green,"Credential erhalten:",end,"\n", credential)
 }
 else console.log("Credential Error: ", credentialResponse.errorBody)
 
