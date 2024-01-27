@@ -11,6 +11,7 @@ import bodyParser from 'body-parser'
 import { W3CVerifiableCredential } from '@veramo/core';
 import { W3cMessageHandler } from '@veramo/credential-w3c';
 
+var verbose = false
 const red = "\x1b[41m"
 const green = "\x1b[42m"
 const end = "\x1b[0m"
@@ -46,7 +47,8 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
   res.sendStatus(202)
 
   if (message.type == "ping") {
-    console.log("DidComm Ping erhalten: {id:" + message.id + ", thid:" + message.threadId + ", data:" + JSON.stringify(message.data) + "}")
+    console.log("> Ping #"+message.threadId)
+    debug(message)
     const response: IDIDCommMessage = {
       type: "pong",
       to: message.from!,
@@ -56,18 +58,20 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
       body: {}
     }
 
-    if (i == 2){
-      console.log("Sende Pong....")
+    //if (i == 2){
+      console.log("< Pong")
       const packed_msg = await agent.packDIDCommMessage({ message: response, packing: "authcrypt" })
       agent.sendDIDCommMessage({ messageId: "123", packedMessage: packed_msg, recipientDidUrl: message.from! })
-    }
-    i++
+    //}
+    //i++
   }
   else if (message.type == "credential_ready"){
     const transaction_id = (message.data! as {transaction_id:string}).transaction_id
-    console.log("DidComm Credential #",transaction_id," bereit")
+    console.log("\n> Credential Benachrichtigung")
+    debug(message)
 
     // Abholung
+    console.log("< Deferred Abfrage")
     const response = await fetch("http://localhost:8080/deferred", {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
     if (response.ok){
       const data = await response.json() as { credential:string }
@@ -94,25 +98,28 @@ var early_resolve: (val:W3CVerifiableCredential) => void
 var early_reject: (error:any) => void
 
 // Scanne QR-Code
+console.log("\n< Scan QR Code")
 const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
-console.log("Scanne QR-Code....")
+console.log("> Preauth Code")
+debug(response)
 
 const offer_uri = response.toString()
 
 // Client erstellen
-console.log("Preauth Code erhalten: ", offer_uri, "\n")
+console.log("\n< Hole Metadaten")
 const client = await OpenID4VCIClient.fromURI({
   uri: offer_uri,
   flowType: AuthzFlowType.PRE_AUTHORIZED_CODE_FLOW,
   alg: Alg.EdDSA,
   retrieveServerMetadata: true,
 })
-console.log("Server Metadata: ", JSON.stringify(client.endpointMetadata, null, 2), "\n")
+console.log("> Metadaten")
+debug(JSON.stringify(client.endpointMetadata, null, 2))
 
 // Token holen
-console.log("Hole Token....")
+console.log("\n< Hole Token")
 const token = await client.acquireAccessToken()
-console.log("Token erhalten:", token, "\n\n")
+console.log("> Token")
 
 // JWT-Proof bauen
 const jwt_header = encodeBase64url(JSON.stringify({
@@ -121,7 +128,6 @@ const jwt_header = encodeBase64url(JSON.stringify({
   kid: global_key_id
 }))
 
-console.log("issuer: ", client.getIssuer())
 const jwt_payload = encodeBase64url(JSON.stringify({
   aud: client.getIssuer(),
   iat: Math.floor(Date.now() / 1000),
@@ -139,10 +145,9 @@ const proof: ProofOfPossession = {
   proof_type: "jwt",
   jwt: jwt_header + '.' + jwt_payload + '.' + signature
 }
-console.log("Proof:\n", proof)
 
 // Credential Anfrage
-console.log("Hole Credential....")
+console.log("\n< Hole Credential")
 const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({ request: client.credentialOffer, metadata: client.endpointMetadata }).build()
 let credentialRequest = await credentialRequestClient.createCredentialRequest({
   proofInput: proof,
@@ -151,6 +156,7 @@ let credentialRequest = await credentialRequestClient.createCredentialRequest({
   version: OpenId4VCIVersion.VER_1_0_11
 })
 Object.defineProperty(credentialRequest, "didcomm_proof", { value: proof, enumerable: true })
+debug(credentialRequest)
 
 // Antwort entweder Credential oder Deferral
 type DeferredResponse = { transaction_id:string, c_nonce:string }
@@ -158,8 +164,9 @@ const credentialResponse = await credentialRequestClient.acquireCredentialsUsing
 
 if (credentialResponse.successBody) {
   if("transaction_id" in credentialResponse.successBody){
-    console.log("Deferral erhalten. Versuche alle 10 sek.:")
     var {transaction_id, c_nonce} = credentialResponse.successBody
+    console.log("> Deferral #"+transaction_id)
+    debug(credentialResponse)
 
     credential = await new Promise<W3CVerifiableCredential>(async (res,rej) => {
       let stop = false
@@ -167,6 +174,7 @@ if (credentialResponse.successBody) {
       early_reject = (error:any) => {stop = true; rej(error)}
 
       while (!stop){
+        console.log("< Deferral Anfrage")
         const response = await fetch("http://localhost:8080/deferred", {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
         if (response.ok){
           const data = await response.json() as { credential:string }
@@ -175,6 +183,7 @@ if (credentialResponse.successBody) {
         else{
           const {error} = await response.json() as { error:string }
           if (error != "issuance_pending") return rej(error)
+          console.log("> Noch nicht bereit")
         }
 
         await new Promise(r => setTimeout(r, 10000));
@@ -184,9 +193,13 @@ if (credentialResponse.successBody) {
   else{
     credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
   }
-  console.log(green,"Credential erhalten:",end,"\n", credential)
+  console.log(green,"> Credential erhalten:",end,"\n", credential)
 }
-else console.log("Credential Error: ", credentialResponse.errorBody)
+else console.log(red,"> Credential Error: ",end, credentialResponse.errorBody)
 
 // close Server
 server_instance.close()
+
+function debug(message:any){
+  if (verbose == true) console.debug(message)
+}
