@@ -72,7 +72,7 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
 
     // Abholung
     console.log("< Deferred Abfrage")
-    const response = await fetch("http://localhost:8080/deferred", {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
+    const response = await fetch(client.endpointMetadata.credentialIssuerMetadata!.deferred_endpoint, {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
     if (response.ok){
       const data = await response.json() as { credential:string }
       early_resolve(JSON.parse(decodeBase64url(data.credential.split(".")[1])))
@@ -175,7 +175,7 @@ if (credentialResponse.successBody) {
 
       while (!stop){
         console.log("< Deferral Anfrage")
-        const response = await fetch("http://localhost:8080/deferred", {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
+        const response = await fetch(client.endpointMetadata.credentialIssuerMetadata!.deferred_endpoint, {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
         if (response.ok){
           const data = await response.json() as { credential:string }
           return res(JSON.parse(decodeBase64url(data.credential.split(".")[1])))
