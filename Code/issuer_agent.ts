@@ -96,7 +96,9 @@ export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataS
           credential_issuer: "http://localhost:8080",
           credentials_supported: [Object.defineProperty({ format: "jwt_vc_json", types: ["VerifiableCredential", "UniversityDegreeCredential"] }, "didcommRequired", {value: "Required", enumerable: true})],
           credential_endpoint: "http://localhost:8080/credentials",
-          token_endpoint: "http://localhost:8080/token"
+          token_endpoint: "http://localhost:8080/token",
+          deferred_endpoint: "http://localhost:8080/deferred",
+          did: "did:web:void1042.github.io:web-did-host:issuer"
         },
         correlationId: "123"
       }]
