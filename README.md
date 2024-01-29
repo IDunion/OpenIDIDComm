@@ -117,14 +117,15 @@ It is also possible to create a separate DIDComm connection parallel to the usua
 
 ## Comparison of the current solutions
 
-||DID JWT without Deferred Credential Endpoint|DID JWT with Deferred Credential Endpoint|DID JWT with Deferred Credential Endpoint as fallback (mixed)|Separate DIDComm|
+||DID JWT<br/>(without Deferred Credential Endpoint)|DID JWT with Deferred Credential Endpoint|DID JWT with Deferred Credential Endpoint as fallback (mixed)|Separate DIDComm|
 |---|---|---|---|---|
 |Support of both flows (Authorization and Pre-Authorized)|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|Enforce DIDComm|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|Optional DIDComm|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|Enforced DIDComm Channel|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|Optional DIDComm Channel|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|No DIDComm Channel<br/>(plain OpenID4VC)|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 |DIDComm channel creation|Between Credential Request and Credential Response|After Credential Response (deferral)|Between Credential Request and Credential Response **OR** after Credential Response (deferral)|Before Credential Response, parallel to OID4VCI flow|
 |DIDComm Delay/Timeout handling|:x: - delay Credential Response or abort with Credential Response Error|:heavy_check_mark: - Credential Response (deferral) is sent immediately|:heavy_check_mark: - Credential Response (deferral) is sent immediately|:heavy_check_mark: - DIDComm channel is created before Credential Request and in parallel|
-|DIDComm Initiator|Issuer|Issuer|Issuer|Wallet|
+|DIDComm Initiator|Issuer|Issuer|Issuer|Holder|
 |Message modification|Credential Request: Body (Header possible)|Credential Request: Body (Header possible)|Credential Request: Body (Header possible)|Credential Request: Header|
 
 
