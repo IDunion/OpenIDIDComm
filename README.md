@@ -117,13 +117,13 @@ It is also possible to create a separate DIDComm connection parallel to the usua
 
 ## Comparison of the current solutions
 
-||DID JWT without Deferred Credential Endpoint|DID JWT with Deferred Credential Endpoint|Separate DIDComm|
-|---|---|---|---|
-|Support of both flows (Authorization and pre-authorized)|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|Enforce DIDComm|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|Optional DIDComm|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|Timeout handling|:x:|:heavy_check_mark:|:heavy_check_mark: - parallel establishment of DIDComm|
-|Message modification|Body (Header possible)|Body (Header possible)|Header|
+||DID JWT without Deferred Credential Endpoint|DID JWT with Deferred Credential Endpoint|DID JWT with Deferred Credential Endpoint as fallback (mixed)|Separate DIDComm|
+|---|---|---|---|---|
+|Support of both flows (Authorization and pre-authorized)|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|Enforce DIDComm|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|Optional DIDComm|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|DIDComm channel creation|Between Credential Request and Credential Response|After Credential Response (deferral)|Between Credential Request and Credential Response **OR** after Credential Response (deferral)|Before Credential Response, parallel to OID4VCI flow|
+|Message modification|Credential Request: Body (Header possible)|Credentail Request: Body (Header possible)|Credentail Request: Body (Header possible)|Credential Request: Header|
 
 
 
