@@ -24,6 +24,8 @@ end rnote
 
 ... <size:20>**...**</size> ...
 
+Wallet <- CI: Token Response (nonce)
+
 alt With DIDComm
   Wallet -> CI: Credential Request (token, proof(s), <color green>didcomm_proof</color>)
   rnote right of Wallet #FFFFFF
@@ -37,11 +39,11 @@ Authorization: BEARER ...
   "doctype":"org.iso.18013.5.1.mDL",
   "proof": {
     "proof_type": "cwt",
-    "cwt": "..."
+    "cwt": "..." (with nonce)
   },
   <color green>"didcomm_proof": {</color>
     <color green>"proof_type": "jwt",</color>
-    <color green>"jwt": "..."</color>
+    <color green>"jwt": "..."</color> (with nonce)
   <color green>}</color>
 }
   end rnote
@@ -63,7 +65,7 @@ Authorization: BEARER ...
   "doctype":"org.iso.18013.5.1.mDL",
   "proof": {
     "proof_type": "cwt",
-    "cwt": "..."
+    "cwt": "..." (with nonce)
   }
 }
   end rnote
