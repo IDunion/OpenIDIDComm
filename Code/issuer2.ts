@@ -1,5 +1,5 @@
 import { agent, resolvers } from './issuer_agent.js'
-import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse, ProofOfPossession, CredentialResponse } from '@sphereon/oid4vci-common'
+import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse, ProofOfPossession, CredentialResponse, CredentialIssuerMetadata, CredentialSupported } from '@sphereon/oid4vci-common'
 import { ICredential } from '@sphereon/ssi-types'
 import express, { Express, Request, Response } from 'express'
 import bodyParser from 'body-parser'
@@ -7,6 +7,7 @@ import { decodeBase64url } from '@veramo/utils'
 import { IDIDCommMessage, TrustPingMessageHandler } from '@veramo/did-comm'
 import { verifyJWT } from 'did-jwt'
 import { Credential } from '@veramo/data-store'
+import * as readline from "readline"
 
 //terminal farben
 var verbose = false
@@ -84,18 +85,24 @@ server.post("/credentials", bodyParser.json(), async (req: Request, res: Respons
     debug(req.body)
 
     // Prüfe DidComm Verbindung
+    const supported = (await agent.oid4vciStoreGetMetadata({ correlationId: "123" }))?.credentials_supported[0] as CredentialSupported & {didcommRequired:string}
     const connection_id = req.body.connection_id as string
-    if (!connection_id || !confirmed_connections[connection_id]){
-        res.status(400).json({ error: "didcomm_unconfirmed" })
-        console.log(red+"< DidComm unbestätigt")
-        return
+    
+    if (supported.didcommRequired == "Required"){
+        if (connection_id === undefined || !confirmed_connections[connection_id]){
+            res.status(400).json({ error: "didcomm_unconfirmed" })
+            console.log(red+"< DidComm unbestätigt"+end)
+            return
+        }
+        else if ((Date.now()-confirmed_connections[connection_id].confirmed_at)/1000 > 60){
+            res.status(400).json({ error: "didcomm_expired" })
+            console.log(red+"< DidComm abgelaufen"+end)
+            return
+        }
     }
-    else if ((Date.now()-confirmed_connections[connection_id].confirmed_at)/1000 > 60){
-        res.status(400).json({ error: "didcomm_expired" })
-        console.log(red+"< DidComm abgelaufen")
-        return
-    }
-    const confirmed_did = confirmed_connections[connection_id].did
+
+    var confirmed_did: string|undefined
+    if (supported.didcommRequired == "Required") confirmed_did = confirmed_connections[connection_id].did
 
     // Automatischer deferral nach 3s
     let deferal: {"transaction_id":string, "c_nonce":string} | undefined
@@ -141,8 +148,30 @@ server.post("/credentials", bodyParser.json(), async (req: Request, res: Respons
     else {
         defered_creds[deferal.transaction_id].status = "READY"
         defered_creds[deferal.transaction_id].credential = credential
-        await send_didcomm_msg(confirmed_did, identifier.did, "credential_ready", {transaction_id: deferal.transaction_id})
+        if (confirmed_did) await send_didcomm_msg(confirmed_did, identifier.did, "credential_ready", {transaction_id: deferal.transaction_id})
         console.log("\n< Credential bereit")
+    }
+
+    if (confirmed_did){
+        let rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+          });
+          const answer = await new Promise(resolve => {
+            rl.question("Message: ", resolve)
+          })
+      
+          const message: IDIDCommMessage = {
+            type: "message",
+            to: confirmed_did,
+            from: identifier.did,
+            id: Math.random().toString().slice(2, 5),
+            body: { message: answer }
+          }
+      
+          const packed_msg = await agent.packDIDCommMessage({ message: message, packing: "authcrypt" })
+          await agent.sendDIDCommMessage({ messageId: message.id, packedMessage: packed_msg, recipientDidUrl: message.to })
+          rl.close()
     }
 })
 
@@ -153,11 +182,11 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
     if (message.type == "register") {
         res.sendStatus(202)
 
-        console.log("> Register DidComm")
+        console.log("\n> Register DidComm")
         const connection_id = String(Math.random().toString(16).slice(2))
         confirmed_connections[connection_id] = { did: message.from!, confirmed_at: Date.now() }
         send_didcomm_msg( message.from!, identifier.did, "ack_registration", { connection_id: connection_id }, message.id )
-        console.log("< Connection ID #"+connection_id)
+        console.log("< Connection ID #"+connection_id+"\n")
     }
     else {
         console.log("\n> Unbekannte DidComm Nachricht")
