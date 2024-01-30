@@ -25,22 +25,22 @@ end rnote
 
 ...
 
-par
-  alt Authorized Flow
-    Wallet -> CI: Authorization Request \n(type(s) of Credentials to be issued)
-    Wallet <- CI: Authorization Response (code)
-    ...
-    Wallet -> CI: Token Request (code)
-    Wallet <- CI: Token Response (token)
-  else Pre-Authorized Flow
-    Wallet -> CI: Token Request (Pre-Auth-Code, pin)
-    Wallet <- CI: Token REsponse (token)
-  end
-else
-  group DIDComm
-    Wallet -> CI: Ping
-    Wallet <- CI: Acknowledge (one-time-code)
-  end
+alt Authorized Flow
+  Wallet -> CI: Authorization Request \n(type(s) of Credentials to be issued)
+  Wallet <- CI: Authorization Response (code)
+  ...
+  Wallet -> CI: Token Request (code)
+  Wallet <- CI: Token Response (token, nonce)
+else Pre-Authorized Flow
+  Wallet -> CI: Token Request (Pre-Auth-Code, pin)
+  Wallet <- CI: Token Response (token, nonce)
+end
+
+...
+
+group DIDComm
+  Wallet -> CI: Ping (nonce)
+  Wallet <- CI: Acknowledge (one-time-code)
 end
 
 ...
@@ -58,7 +58,7 @@ Authorization: BEARER ...
   "doctype":"org.iso.18013.5.1.mDL",
   "proof": {
     "proof_type": "cwt",
-    "cwt": "..."
+    "cwt": "..." (with nonce)
   }
 }
 end rnote
