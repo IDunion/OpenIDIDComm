@@ -10,7 +10,7 @@ import express, { Express, Request, Response } from 'express'
 import bodyParser from 'body-parser'
 import { W3CVerifiableCredential } from '@veramo/core';
 import { W3cMessageHandler } from '@veramo/credential-w3c';
-import * as readline from "readline" 
+import * as readline from "readline"
 
 var verbose = false
 const red = "\x1b[41m"
@@ -41,14 +41,14 @@ const global_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod
 /**********/
 const server: Express = express()
 
-var i=0
+var i = 0
 /* Hier kommt die kommt die DidComm Verbindungsanfrage an */
 server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
   const message = await agent.handleMessage({ raw: req.body.toString() })
   res.sendStatus(202)
 
   if (message.type == "ping") {
-    console.log("> Ping #"+message.id)
+    console.log("> Ping #" + message.id)
     debug(message)
     const response: IDIDCommMessage = {
       type: "pong",
@@ -59,27 +59,27 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
       body: {}
     }
 
-    if (i == 2){
-    console.log("< Pong")
-    const packed_msg = await agent.packDIDCommMessage({ message: response, packing: "authcrypt" })
-    agent.sendDIDCommMessage({ messageId: "123", packedMessage: packed_msg, recipientDidUrl: message.from! })
+    if (i == 2) {
+      console.log("< Pong")
+      const packed_msg = await agent.packDIDCommMessage({ message: response, packing: "authcrypt" })
+      agent.sendDIDCommMessage({ messageId: "123", packedMessage: packed_msg, recipientDidUrl: message.from! })
     }
     i++
   }
-  else if (message.type == "credential_ready"){
-    const transaction_id = (message.data! as {transaction_id:string}).transaction_id
+  else if (message.type == "credential_ready") {
+    const transaction_id = (message.data! as { transaction_id: string }).transaction_id
     console.log("\n> Credential Benachrichtigung")
     debug(message)
 
     // Abholung
     console.log("< Deferred Abfrage")
-    const response = await fetch(client.endpointMetadata.credentialIssuerMetadata!.deferred_endpoint, {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
-    if (response.ok){
-      const data = await response.json() as { credential:string }
+    const response = await fetch(client.endpointMetadata.credentialIssuerMetadata!.deferred_endpoint, { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
+    if (response.ok) {
+      const data = await response.json() as { credential: string }
       early_resolve(JSON.parse(decodeBase64url(data.credential.split(".")[1])))
     }
-    else{
-      const {error} = await response.json() as { error:string }
+    else {
+      const { error } = await response.json() as { error: string }
       if (error != "issuance_pending") early_reject(error)
     }
   }
@@ -95,12 +95,12 @@ const server_instance = server.listen(8081, () => {
 /***************/
 
 var credential: W3CVerifiableCredential | undefined
-var early_resolve: (val:W3CVerifiableCredential) => void
-var early_reject: (error:any) => void
+var early_resolve: (val: W3CVerifiableCredential) => void
+var early_reject: (error: any) => void
 var client: OpenID4VCIClient
 var c_nonce: string
 
-async function main(){
+async function main() {
   // Scanne QR-Code
   console.log("\n< Scan QR Code")
   const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
@@ -163,30 +163,30 @@ async function main(){
   debug(credentialRequest)
 
   // Antwort entweder Credential oder Deferral
-  type DeferredResponse = { transaction_id:string, c_nonce:string }
-  const credentialResponse = await credentialRequestClient.acquireCredentialsUsingRequest(credentialRequest) as OpenIDResponse<CredentialResponse|DeferredResponse>
+  type DeferredResponse = { transaction_id: string, c_nonce: string }
+  const credentialResponse = await credentialRequestClient.acquireCredentialsUsingRequest(credentialRequest) as OpenIDResponse<CredentialResponse | DeferredResponse>
 
   if (credentialResponse.successBody) {
-    if("transaction_id" in credentialResponse.successBody){
-      var {transaction_id, c_nonce} = credentialResponse.successBody
-      console.log("> Deferral #"+transaction_id)
+    if ("transaction_id" in credentialResponse.successBody) {
+      var { transaction_id, c_nonce } = credentialResponse.successBody
+      console.log("> Deferral #" + transaction_id)
       debug(credentialResponse)
 
-      credential = await new Promise<W3CVerifiableCredential>(async (res,rej) => {
+      credential = await new Promise<W3CVerifiableCredential>(async (res, rej) => {
         let stop = false
-        early_resolve = (val:W3CVerifiableCredential) => {stop = true; res(val)}
-        early_reject = (error:any) => {stop = true; rej(error)}
+        early_resolve = (val: W3CVerifiableCredential) => { stop = true; res(val) }
+        early_reject = (error: any) => { stop = true; rej(error) }
 
         await new Promise(r => setTimeout(r, 10000));
-        while (!stop){
+        while (!stop) {
           console.log("< Deferral Anfrage")
-          const response = await fetch(client.endpointMetadata.credentialIssuerMetadata!.deferred_endpoint, {method: "post", body: JSON.stringify({transaction_id:transaction_id, c_nonce:c_nonce}), headers: {'Content-Type': 'application/json'}})
-          if (response.ok){
-            const data = await response.json() as { credential:string }
+          const response = await fetch(client.endpointMetadata.credentialIssuerMetadata!.deferred_endpoint, { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
+          if (response.ok) {
+            const data = await response.json() as { credential: string }
             return res(JSON.parse(decodeBase64url(data.credential.split(".")[1])))
           }
-          else{
-            const {error} = await response.json() as { error:string }
+          else {
+            const { error } = await response.json() as { error: string }
             if (error != "issuance_pending") return rej(error)
             console.log("> Noch nicht bereit")
           }
@@ -195,24 +195,24 @@ async function main(){
         }
       })
     }
-    else{
+    else {
       credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
     }
-    console.log(green,"> Credential erhalten:",end,"\n\n", credential)
+    console.log(green, "> Credential erhalten:", end, "\n\n", credential)
 
     var rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
 
-    while(true){
-      rl.question( "Message: ", (answer) => {
+    while (true) {
+      rl.question("Message: ", (answer) => {
 
       })
     }
   }
-  else{
-    console.log(red,"> Credential Error: ",end, credentialResponse.errorBody)
+  else {
+    console.log(red, "> Credential Error: ", end, credentialResponse.errorBody)
     return
   }
 }
@@ -222,6 +222,6 @@ await main()
 // close Server
 server_instance.close()
 
-function debug(message:any){
+function debug(message: any) {
   if (verbose == true) console.debug(message)
 }
