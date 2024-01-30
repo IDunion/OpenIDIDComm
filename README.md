@@ -2,8 +2,6 @@
 
 The [OpenID4VCI](https://openid.github.io/OpenID4VCI/openid-4-verifiable-credential-issuance-wg-draft.html) and [OpenID4VP](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-wg-draft.html) specifications define protocols for issuance and verification of Verifiable Credentials between Issuer, Wallet, and Verifier extending the commonly used [OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749) protocol. Currently the two OpenID4VCI/VP-Protocols are missing a feature to enable future communication between the involved parties. To add this feature to the OpenID4VCI/VP-Protocols we want to utilize [DIDComm](https://identity.foundation/didcomm-messaging/spec/), a transport agnostic messaging protocol based on Decentralized Identifiers (DIDs). Therefore, the goal of this work is to write an extension for the two OpenID4VCI/VP-Protocols that additionally allows the creation of a DIDComm channel for future communication.
 
-[[_TOC_]]
-
 # Onboarding
 
 To familiarize yourself with the topic, it is worth taking a look at the following sources:
@@ -31,8 +29,6 @@ The DIDComm Protocol is a messaging protocol based on Decentralized Identifiers 
     - When translating DIDs into DID Documents one has to understand the process of [DID Resolution](https://www.w3.org/TR/did-core/#resolution) (Chapter 7.1 without subchapters is enough!). It is very helpful to read about the resolution rules of some DID methods such as [did:peer](https://identity.foundation/peer-did-method-spec/) and [did:web](https://w3c-ccg.github.io/did-method-web/)
 - [DIDComm Specification](https://identity.foundation/didcomm-messaging/spec/)
     - After learning how DIDs work and what information is stored inside DID Documents it is fairly straight forward to read the DIDComm Specification
-
-### TODO: write custom summary of above topics for newcomers
 
 ---
 # Background
@@ -87,7 +83,7 @@ Optional:
 
 ### DID JWT
 
-This solutions utilizes "JSON Web Tokens" to pass a DID in the credential request and at the same time proving possesion of the key material.
+This solution utilizes "JSON Web Tokens" to pass a DID in the credential request and at the same time proving possession of the key material.
 
 Required:
 - Solution established additional DIDComm channel
@@ -109,7 +105,7 @@ These solutions could also be applied to OID4VP.
 
 ![OID4VC Diagram](/Diagramme/OID4VP/DID_Proof/vp_did_proof.png)
 
-### Seperate DIDComm
+### Separate DIDComm
 
 It is also possible to create a separate DIDComm connection parallel to the usual (pre-)authorized flow. This solution uses one-time-codes or pseudorandom numbers in order to synchronize the DIDComm Connection.
 
@@ -127,6 +123,4 @@ It is also possible to create a separate DIDComm connection parallel to the usua
 |DIDComm Delay/Timeout handling|:x: - delay Credential Response or abort with Credential Response Error|:heavy_check_mark: - Credential Response (deferral) is sent immediately|:heavy_check_mark: - Credential Response (deferral) is sent immediately|:heavy_check_mark: - DIDComm channel is created before Credential Request and in parallel|
 |DIDComm Initiator|Issuer|Issuer|Issuer|Holder|
 |Message modification|Credential Request: Body (Header possible)|Credential Request: Body (Header possible)|Credential Request: Body (Header possible)|Credential Request: Header|
-
-
-
+|Session correlation|DID JWT in Credential Request +<br>DIDComm Ping with Nonce|DID JWT in Credential Request +<br>DIDComm Ping with Nonce|DID JWT in Credential Request +<br>DIDComm Ping with Nonce|DIDComm Ping with Nonce +<br>DIDComm Acknowledge and Credential Request with one-time-code|
