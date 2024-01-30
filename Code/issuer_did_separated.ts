@@ -17,6 +17,7 @@ const end = "\x1b[0m"
 
 var confirmed_connections: Record<string, { did: string, confirmed_at: number }> = {};
 var defered_creds: Record<string, { status: string, credential?: CredentialResponse }> = {};
+//var allowed_pings: string[] = [];
 
 /*********/
 /* SETUP */
@@ -74,7 +75,9 @@ server.post("/token", express.urlencoded({ extended: true }), async (req: Reques
     console.log("\n> Token Anfrage")
     debug(req.body)
     const token = await get_token(req.body)
-    res.send(token)
+    //const didcomm_id = Math.random().toString().slice(2,6)
+    //allowed_pings.push(didcomm_id)
+    //res.set('DIDComm_ID', didcomm_id).send(token)
     console.log("< Token")
     debug(token)
 })
@@ -181,6 +184,14 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
 
     if (message.type == "register") {
         res.sendStatus(202)
+
+        // Prüfe ob der Ping zu einem Flow gehört
+        /*const didcomm_id = message.data?['didcomm_id'] as unknown as string:''
+        if (!allowed_pings.includes(didcomm_id)){
+            console.log("\n> Unautorisierter DIDComm Ping")
+            return
+        }
+        delete allowed_pings[didcomm_id]*/
 
         console.log("\n> Register DidComm")
         const connection_id = String(Math.random().toString(16).slice(2))
