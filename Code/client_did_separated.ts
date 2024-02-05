@@ -222,7 +222,7 @@ async function main() {
 await main()
 
 // close Server
-server_instance.close()
+// server_instance.close()
 
 function debug(message: any) {
   if (verbose == true) console.debug(message)

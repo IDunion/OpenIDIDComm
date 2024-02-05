@@ -9,6 +9,7 @@ import { verifyJWT } from 'did-jwt'
 import { Credential } from '@veramo/data-store'
 import * as readline from "readline"
 import { IIdentifier } from '@veramo/core'
+import * as http from "http"
 
 //terminal farben
 var verbose = false
@@ -23,6 +24,7 @@ export class Issuer {
     store_id:string
     base_url:string
 
+    server:http.Server | undefined
     confirmed_connections: Record<string, { did: string, confirmed_at: number }> = {};
     defered_creds: Record<string, { status: string, credential?: CredentialResponse }> = {};
 
@@ -76,10 +78,10 @@ export class Issuer {
     /* SERVER */
     /**********/
     start_server() {
-        const server: Express = express()
+        const app = express()
 
         // Simuliert das scannen des QR-Codes. Vorerst nur mit Referenz auf SIOP-Anfrage
-        server.get("/offer", async (req: Request, res: Response) => {
+        app.get("/offer", async (req: Request, res: Response) => {
             console.log("\n> QR Code scan")
             const preauth_code = Math.random().toString(16).slice(2)
             const req_uri = await this.create_offer(preauth_code)
@@ -89,7 +91,7 @@ export class Issuer {
         })
 
         // Hier bekommt der Client die OID4VCI Metadaten her
-        server.get("/.well-known/openid-credential-issuer", async (req: Request, res: Response) => {
+        app.get("/.well-known/openid-credential-issuer", async (req: Request, res: Response) => {
             console.log("\n> Metadaten Anfrage")
             const metadata = await agent.oid4vciStoreGetMetadata({ correlationId: this.store_id })
             res.send(metadata)
@@ -98,7 +100,7 @@ export class Issuer {
         })
 
         // Hier bekommt der Client den Token
-        server.post("/token", express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
+        app.post("/token", express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
             console.log("\n> Token Anfrage")
             this.debug(req.body)
             const token = await this.get_token(req.body)
@@ -111,7 +113,7 @@ export class Issuer {
         })
 
         // Hier bekommt der Client das Credential
-        server.post("/credentials", bodyParser.json(), async (req: Request, res: Response) => {
+        app.post("/credentials", bodyParser.json(), async (req: Request, res: Response) => {
             console.log("\n> Credential Anfrage")
             this.debug(req.body)
 
@@ -182,32 +184,10 @@ export class Issuer {
                 if (confirmed_did) await this.send_didcomm_msg(confirmed_did, this.identifier.did, "credential_ready", { transaction_id: deferal.transaction_id })
                 console.log("\n< Credential bereit")
             }
-
-            if (confirmed_did) {
-                let rl = readline.createInterface({
-                    input: process.stdin,
-                    output: process.stdout
-                });
-                const answer = await new Promise(resolve => {
-                    rl.question("Message: ", resolve)
-                })
-
-                const message: IDIDCommMessage = {
-                    type: "message",
-                    to: confirmed_did,
-                    from: this.identifier.did,
-                    id: Math.random().toString().slice(2, 5),
-                    body: { message: answer }
-                }
-
-                const packed_msg = await agent.packDIDCommMessage({ message: message, packing: "authcrypt" })
-                await agent.sendDIDCommMessage({ messageId: message.id, packedMessage: packed_msg, recipientDidUrl: message.to })
-                rl.close()
-            }
         })
 
         // Hier kommt die DidComm Verbindungsbestätigung an
-        server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
+        app.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
             const message = await agent.handleMessage({ raw: req.body.toString() })
 
             if (message.type == "register") {
@@ -227,6 +207,10 @@ export class Issuer {
                 this.send_didcomm_msg(message.from!, this.identifier.did, "ack_registration", { connection_id: connection_id }, message.id)
                 console.log("< Connection ID #" + connection_id + "\n")
             }
+            else if (message.type == "message") {
+                res.sendStatus(202)
+                console.log("> DidComm Message:", (message.data! as any).message)
+            }
             else {
                 console.log("\n> Unbekannte DidComm Nachricht")
                 res.sendStatus(404)
@@ -234,9 +218,14 @@ export class Issuer {
         })
 
         const port = Number(this.base_url.split(":")[2].split("/")[0])
-        server.listen(port, () => {
+        this.server = app.listen(port, () => {
             console.log("Server listening on port",port,"\n")
         })
+    }
+
+    stop_server() {
+        if (this.server) this.server.close( () => {console.log("Server closed"); this.server = undefined} )
+        else console.log("No server running")
     }
 
     /***********/

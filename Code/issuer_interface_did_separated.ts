@@ -1,13 +1,14 @@
 import prompts from 'prompts'
 import { agent } from './issuer_agent.js'
 import { Issuer } from './issuer_did_separated.js'
+import { IDIDCommMessage } from '@veramo/did-comm'
 import qr from "qrcode-terminal"
 
 enum IssuerActions {
     CREATE_ISSUER,
     RUN_ISSUER,
     CREATE_OFFER,
-    START_DIDCOMM_CHAT,
+    SEND_DIDCOMM_MESSAGE,
     QUIT
 };
 var current_store_id = 0
@@ -25,7 +26,7 @@ async function main(){
                 { title: 'Create Issuer', value: IssuerActions.CREATE_ISSUER },
                 { title: 'Run Issuer', value: IssuerActions.RUN_ISSUER },
                 { title: 'Create Offer', value: IssuerActions.CREATE_OFFER },
-                { title: 'Start DIDComm chat', value: IssuerActions.START_DIDCOMM_CHAT },
+                { title: 'Send a DIDComm Message', value: IssuerActions.SEND_DIDCOMM_MESSAGE },
                 { title: 'Quit', value: IssuerActions.QUIT }
             ]
         })
@@ -40,8 +41,8 @@ async function main(){
             case IssuerActions.CREATE_OFFER:
                 await create_offer("123")
                 break
-            case IssuerActions.START_DIDCOMM_CHAT:
-                await start_didcomm_chat()
+            case IssuerActions.SEND_DIDCOMM_MESSAGE:
+                await send_didcomm_message()
                 break
             case IssuerActions.QUIT:
                 return
@@ -91,16 +92,41 @@ async function create_offer( preauth_code: string) {
     qr.generate(offer.uri, { small: true })
 }
 
-async function start_didcomm_chat() {
-    while (true) {
-        const response = await prompts({
-            type: 'text',
-            name: 'didcomm_message',
-            message: `Enter a message:`
-        })
-        if (response.didcomm_message == 'quit') {
-            return
-        }
-        console.log("DIDComm: ", response.didcomm_message)
+async function send_didcomm_message() {
+    var choices = Object.entries(issuers).map( ([did,issuer]) => ({ title: did, value: did }) )
+
+    const issuer_did = (await prompts({
+        type: 'select',
+        name: 'value',
+        message: 'Pick an Issuer:',
+        choices: choices
+    })).value as string
+
+    choices = Object.entries(issuers[issuer_did].confirmed_connections).map( ([connection_id,{did,confirmed_at}]) => ({ title: did, value: did }))
+
+    const client_did = (await prompts({
+        type: 'select',
+        name: 'value',
+        message: 'Pick a Client:',
+        choices: choices
+    })).value as string
+
+    const text = (await prompts({
+        type: 'text',
+        name: 'message',
+        message: `Enter a message:`
+    })).message
+
+    if (text == 'quit') return
+
+    const message: IDIDCommMessage = {
+        type: "message",
+        to: client_did,
+        from: issuer_did,
+        id: Math.random().toString().slice(2, 5),
+        body: { message: text }
     }
+
+    const packed_msg = await agent.packDIDCommMessage({ message: message, packing: "authcrypt" })
+    await agent.sendDIDCommMessage({ messageId: message.id, packedMessage: packed_msg, recipientDidUrl: message.to })
 }
