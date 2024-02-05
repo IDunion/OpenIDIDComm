@@ -35,7 +35,7 @@ async function main(){
                 await create_issuer()
                 break
             case IssuerActions.RUN_ISSUER:
-                run_issuer()
+                await run_issuer()
                 break
             case IssuerActions.CREATE_OFFER:
                 await create_offer("123")
@@ -50,8 +50,8 @@ async function main(){
 }
 
 async function create_issuer() {
-    const did = (await prompts({ type: 'text', name: 'value', message: 'Enter DID:' })).value as string;
-    const base_url = (await prompts({ type: 'text', name: 'value', message: 'Enter Base URL:' })).value as string;
+    const did = (await prompts({ type: 'text', name: 'value', message: 'Enter DID:', initial: "did:web:void1042.github.io:web-did-host:issuer" })).value as string;
+    const base_url = (await prompts({ type: 'text', name: 'value', message: 'Enter Base URL:', initial: "http://localhost:8080" })).value as string;
     const store_id = String(current_store_id++)
 
     issuers[did] = await Issuer.build( did, store_id, base_url )

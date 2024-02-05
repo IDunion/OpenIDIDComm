@@ -16,14 +16,15 @@ const red = "\x1b[41m"
 const green = "\x1b[42m"
 const end = "\x1b[0m"
 
-var confirmed_connections: Record<string, { did: string, confirmed_at: number }> = {};
-var defered_creds: Record<string, { status: string, credential?: CredentialResponse }> = {};
 //var allowed_pings: string[] = [];
 
 export class Issuer {
     identifier: IIdentifier;
     store_id:string
     base_url:string
+
+    confirmed_connections: Record<string, { did: string, confirmed_at: number }> = {};
+    defered_creds: Record<string, { status: string, credential?: CredentialResponse }> = {};
 
     constructor ( identifier: IIdentifier, store_id:string, base_url:string ) {
         this.identifier = identifier
@@ -32,10 +33,11 @@ export class Issuer {
     }
 
     static async build( did:string, store_id:string, base_url:string) {
+        const parts = did.split(":")
         const identifier = await agent.didManagerGetOrCreate({
-            alias: did,
+            alias: parts.slice(2).join(":"),
             kms: "local",
-            provider: "did:web",
+            provider: parts.slice(0,2).join(":"),
             options: {
                 keyType: 'Ed25519'
             }
@@ -89,7 +91,7 @@ export class Issuer {
         // Hier bekommt der Client die OID4VCI Metadaten her
         server.get("/.well-known/openid-credential-issuer", async (req: Request, res: Response) => {
             console.log("\n> Metadaten Anfrage")
-            const metadata = await agent.oid4vciStoreGetMetadata({ correlationId: "123" })
+            const metadata = await agent.oid4vciStoreGetMetadata({ correlationId: this.store_id })
             res.send(metadata)
             console.log("< Metadaten")
             this.debug(metadata)
@@ -100,6 +102,7 @@ export class Issuer {
             console.log("\n> Token Anfrage")
             this.debug(req.body)
             const token = await this.get_token(req.body)
+            res.send(token)
             //const didcomm_id = Math.random().toString().slice(2,6)
             //allowed_pings.push(didcomm_id)
             //res.set('DIDComm_ID', didcomm_id).send(token)
@@ -117,12 +120,12 @@ export class Issuer {
             const connection_id = req.body.connection_id as string
 
             if (supported.didcommRequired == "Required") {
-                if (connection_id === undefined || !confirmed_connections[connection_id]) {
+                if (connection_id === undefined || !this.confirmed_connections[connection_id]) {
                     res.status(400).json({ error: "didcomm_unconfirmed" })
                     console.log(red + "< DidComm unbestätigt" + end)
                     return
                 }
-                else if ((Date.now() - confirmed_connections[connection_id].confirmed_at) / 1000 > 60) {
+                else if ((Date.now() - this.confirmed_connections[connection_id].confirmed_at) / 1000 > 60) {
                     res.status(400).json({ error: "didcomm_expired" })
                     console.log(red + "< DidComm abgelaufen" + end)
                     return
@@ -130,7 +133,7 @@ export class Issuer {
             }
 
             var confirmed_did: string | undefined
-            if (supported.didcommRequired == "Required") confirmed_did = confirmed_connections[connection_id].did
+            if (supported.didcommRequired == "Required") confirmed_did = this.confirmed_connections[connection_id].did
 
             // Automatischer deferral nach 3s
             let deferal: { "transaction_id": string, "c_nonce": string } | undefined
@@ -139,7 +142,7 @@ export class Issuer {
                     "transaction_id": String(Math.random().toString(16).slice(2)),
                     "c_nonce": String(Math.random().toString(16).slice(2))
                 }
-                defered_creds[deferal.transaction_id] = { status: "PENDING", credential: undefined }
+                this.defered_creds[deferal.transaction_id] = { status: "PENDING", credential: undefined }
                 res.send(deferal)
                 console.log("< Deferral")
                 this.debug(deferal)
@@ -163,7 +166,7 @@ export class Issuer {
                         console.log(red, "< Interner Fehler", end)
                     }
                 }
-                else defered_creds[deferal.transaction_id].status = "FAILED"
+                else this.defered_creds[deferal.transaction_id].status = "FAILED"
 
                 return
             }
@@ -174,8 +177,8 @@ export class Issuer {
                 this.debug(credential)
             }
             else {
-                defered_creds[deferal.transaction_id].status = "READY"
-                defered_creds[deferal.transaction_id].credential = credential
+                this.defered_creds[deferal.transaction_id].status = "READY"
+                this.defered_creds[deferal.transaction_id].credential = credential
                 if (confirmed_did) await this.send_didcomm_msg(confirmed_did, this.identifier.did, "credential_ready", { transaction_id: deferal.transaction_id })
                 console.log("\n< Credential bereit")
             }
@@ -220,7 +223,7 @@ export class Issuer {
 
                 console.log("\n> Register DidComm")
                 const connection_id = String(Math.random().toString(16).slice(2))
-                confirmed_connections[connection_id] = { did: message.from!, confirmed_at: Date.now() }
+                this.confirmed_connections[connection_id] = { did: message.from!, confirmed_at: Date.now() }
                 this.send_didcomm_msg(message.from!, this.identifier.did, "ack_registration", { connection_id: connection_id }, message.id)
                 console.log("< Connection ID #" + connection_id + "\n")
             }
@@ -230,7 +233,7 @@ export class Issuer {
             }
         })
 
-        const port = Number(this.base_url.split(":")[1].split("/")[0])
+        const port = Number(this.base_url.split(":")[2].split("/")[0])
         server.listen(port, () => {
             console.log("Server listening on port",port,"\n")
         })
@@ -241,7 +244,7 @@ export class Issuer {
     /***********/
     private async create_offer(preauth_code: string): Promise<string> {
         const offer = await agent.oid4vciCreateOfferURI({
-            credentialIssuer: "123",
+            credentialIssuer: this.store_id,
             storeId: "_default",
             namespace: "oid4vci",
             grants: { 'urn:ietf:params:oauth:grant-type:pre-authorized_code': { 'pre-authorized_code': preauth_code, user_pin_required: false } }
@@ -253,7 +256,7 @@ export class Issuer {
     private async get_token(request: AccessTokenRequest): Promise<AccessTokenResponse> {
         const response = await agent.oid4vciCreateAccessTokenResponse({
             request: request,
-            credentialIssuer: "123",
+            credentialIssuer: this.store_id,
             expirationDuration: 100000
         })
     
@@ -276,7 +279,7 @@ export class Issuer {
     
         const response = await agent.oid4vciIssueCredential({
             credential: credential,
-            credentialIssuer: "123",
+            credentialIssuer: this.store_id,
             credentialRequest: {
                 format: 'jwt_vc_json',
                 proof: request.proof,
