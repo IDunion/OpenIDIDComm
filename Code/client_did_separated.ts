@@ -11,6 +11,7 @@ import bodyParser from 'body-parser'
 import { W3CVerifiableCredential } from '@veramo/core';
 import { W3cMessageHandler } from '@veramo/credential-w3c';
 import * as readline from "readline"
+import prompts from 'prompts'
 
 var verbose = false
 const red = "\x1b[41m"
@@ -97,11 +98,12 @@ var c_nonce: string
 async function main() {
   // Scanne QR-Code
   console.log("\n< Scan QR Code")
-  const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
+  //const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
+  const response = (await prompts({ type: 'text', name: 'value', message: 'Enter Offer:' })).value as string;
   console.log("> Preauth Code")
   debug(response)
 
-  const offer_uri = response.toString()
+  const offer_uri = response
 
   // Client erstellen
   console.log("\n< Hole Metadaten")
