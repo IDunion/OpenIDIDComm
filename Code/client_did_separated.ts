@@ -170,7 +170,7 @@ async function main(offer_uri?: string) {
   const connection_id = await new Promise<string>(async (res, rej) => {
     const timeoutID = setTimeout(rej, 4000)
 
-    const msg_id = await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "register", { correlation_id: "Banane" })
+    const msg_id = await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "register", { correlation_id: correlation_id })
     outstanding_registrations[msg_id] = { acknowledge: (val: any) => { clearTimeout(timeoutID); res(val) } }
     console.log("\n< Registriere DidComm")
   }).catch(e => { 
