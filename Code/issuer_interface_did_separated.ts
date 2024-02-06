@@ -26,7 +26,7 @@ async function main(){
                 { title: 'Create Issuer', value: IssuerActions.CREATE_ISSUER },
                 { title: 'Run Issuer', value: IssuerActions.RUN_ISSUER },
                 { title: 'Create Offer', value: IssuerActions.CREATE_OFFER },
-                { title: 'Send a DIDComm Message', value: IssuerActions.SEND_DIDCOMM_MESSAGE },
+                { title: 'Start a DIDComm Chat', value: IssuerActions.SEND_DIDCOMM_MESSAGE },
                 { title: 'Quit', value: IssuerActions.QUIT }
             ]
         })
@@ -42,9 +42,10 @@ async function main(){
                 await create_offer("123")
                 break
             case IssuerActions.SEND_DIDCOMM_MESSAGE:
-                await send_didcomm_message()
+                await start_didcomm_chat()
                 break
             case IssuerActions.QUIT:
+                Object.values(issuers).forEach((issuer) => issuer.stop_server())
                 return
         }
     }
@@ -92,7 +93,7 @@ async function create_offer( preauth_code: string) {
     qr.generate(offer.uri, { small: true })
 }
 
-async function send_didcomm_message() {
+async function start_didcomm_chat() {
     var choices = Object.entries(issuers).map( ([did,issuer]) => ({ title: did, value: did }) )
 
     const issuer_did = (await prompts({
@@ -111,22 +112,49 @@ async function send_didcomm_message() {
         choices: choices
     })).value as string
 
-    const text = (await prompts({
-        type: 'text',
-        name: 'message',
-        message: `Enter a message:`
-    })).message
+    // DIDComm chat with selected Client and Issuer
+    const iss = issuers[issuer_did]
 
-    if (text == 'quit') return
+    while(true){
+        const text = (await prompts({
+            type: 'text',
+            name: 'message',
+            message: `Enter a message:`
+        })).message as string
 
-    const message: IDIDCommMessage = {
-        type: "message",
-        to: client_did,
-        from: issuer_did,
-        id: Math.random().toString().slice(2, 5),
-        body: { message: text }
+        if (text.startsWith('/')){
+            // Its a command
+            switch (text) {
+                case '/quit':
+                case '/q':
+                    return
+                case '/help':
+                    print_help_dialog()
+                    break
+                case '/re-offer':
+                    // Send invitation to re-offer the credential
+                    iss.send_didcomm_msg(client_did, issuer_did, 'opendid4vci-re-offer', {offer: await iss.create_offer("456")})
+                    break
+                case '/revoke':
+                    iss.send_didcomm_msg(client_did, issuer_did, 'opendid4vci-revocation', {message: 'Hello my friend, you got scammed'})
+                    break
+                default:
+                    console.error('Unknown command')
+                    break
+            }
+        }
+        else {
+            // Normal Message
+            iss.send_didcomm_msg(client_did, issuer_did, 'message', {message: text})
+        }
     }
+}
 
-    const packed_msg = await agent.packDIDCommMessage({ message: message, packing: "authcrypt" })
-    await agent.sendDIDCommMessage({ messageId: message.id, packedMessage: packed_msg, recipientDidUrl: message.to })
+function print_help_dialog(){
+    console.log(
+        '/help      shows this help dialog\n' +
+        '/q /quit   exit to menu\n' +
+        '/re-offer  send a new offer to the client\n' +
+        '/revoke    notify the client about a revoked credential\n'
+    )
 }

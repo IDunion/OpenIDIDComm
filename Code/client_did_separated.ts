@@ -1,4 +1,4 @@
-import { OpenID4VCIClient } from '@sphereon/oid4vci-client';
+import { AccessTokenClient, OpenID4VCIClient } from '@sphereon/oid4vci-client';
 import { AuthzFlowType, Alg, OpenId4VCIVersion, OpenIDResponse, CredentialResponse } from '@sphereon/oid4vci-common'
 import { CredentialRequestClientBuilder } from '@sphereon/oid4vci-client';
 import { ProofOfPossession } from '@sphereon/oid4vci-common';
@@ -78,6 +78,14 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
       if (error != "issuance_pending") early_reject(error)
     }
   }
+  else if (message.type == "opendid4vci-re-offer") {
+    const offer = (message.data as any).offer
+    console.log("> Received a new offer:", offer)
+    await main(offer)
+  }
+  else if (message.type == "opendid4vci-revocation") {
+    console.log(red + "> Credential got revoked" + end)
+  }
 })
 
 const server_instance = server.listen(8081, () => {
@@ -95,15 +103,18 @@ var early_resolve: (val: W3CVerifiableCredential) => void
 var early_reject: (error: any) => void
 var c_nonce: string
 
-async function main() {
-  // Scanne QR-Code
-  console.log("\n< Scan QR Code")
-  //const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
-  const response = (await prompts({ type: 'text', name: 'value', message: 'Enter Offer:' })).value as string;
-  console.log("> Preauth Code")
-  debug(response)
+async function main(offer_uri?: string) {
 
-  const offer_uri = response
+  if (!offer_uri) {
+    // Scanne QR-Code
+    console.log("\n< Scan QR Code")
+    //const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
+    const response = (await prompts({ type: 'text', name: 'value', message: 'Enter Offer:' })).value as string;
+    console.log("> Preauth Code")
+    debug(response)
+
+    offer_uri = response
+  }
 
   // Client erstellen
   console.log("\n< Hole Metadaten")
@@ -118,27 +129,16 @@ async function main() {
   else console.log("> Metadaten: DidComm " + green + didcomm_required + end)
   debug(JSON.stringify(client.endpointMetadata, null, 2))
 
-
-  const connection_id_promise = new Promise<string>(async (res, rej) => {
-    const timeoutID = setTimeout(rej, 4000)
-
-    const message: IDIDCommMessage = {
-      type: "register",
-      to: client.endpointMetadata.credentialIssuerMetadata!.did,
-      from: identifier.did,
-      id: Math.random().toString().slice(2, 5),
-      body: {}
-    }
-
-    const packed_msg = await agent.packDIDCommMessage({ message: message, packing: "authcrypt" })
-    await agent.sendDIDCommMessage({ messageId: message.id, packedMessage: packed_msg, recipientDidUrl: message.to })
-    outstanding_registrations[message.id] = { acknowledge: (val: any) => { clearTimeout(timeoutID); res(val) } }
-    console.log("\n< Registriere DidComm")
-  })
-
   // Token holen
   console.log("\n< Hole Token")
-  const token = await client.acquireAccessToken()
+  //const token = await client.acquireAccessToken()
+
+  const accessTokenClient = new AccessTokenClient();
+  const response = await accessTokenClient.acquireAccessToken({ credentialOffer: client.credentialOffer, metadata: client.endpointMetadata });
+  const correlation_id = response.origResponse.headers.get('DIDComm_Correlation_ID') ?? 0
+  console.log("DIDComm_Correlation_ID:", correlation_id)
+  const token = response.successBody! ?? {}
+
   console.log("> Token")
 
   // JWT-Proof bauen
@@ -166,8 +166,18 @@ async function main() {
     jwt: jwt_header + '.' + jwt_payload + '.' + signature
   }
 
-  // Warte auf DidComm Nonce
-  const connection_id = await connection_id_promise
+  // Warte auf DidComm Connection ID
+  const connection_id = await new Promise<string>(async (res, rej) => {
+    const timeoutID = setTimeout(rej, 4000)
+
+    const msg_id = await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "register", { correlation_id: "Banane" })
+    outstanding_registrations[msg_id] = { acknowledge: (val: any) => { clearTimeout(timeoutID); res(val) } }
+    console.log("\n< Registriere DidComm")
+  }).catch(e => { 
+    console.error(red + 'DIDComm Connection failed, aborting OID4VCI flow...' + end)
+    return
+  })
+
 
   // Credential Anfrage
   console.log("\n< Hole Credential")
@@ -224,8 +234,28 @@ async function main() {
 await main()
 
 // close Server
-// server_instance.close()
+server_instance.close()
+
+/***********/
+/* UTILITY */
+/***********/
 
 function debug(message: any) {
   if (verbose == true) console.debug(message)
+}
+
+async function send_didcomm_msg(to: string, from: string, type: string, body: Object, thid?: string): Promise<string> {
+  const message: IDIDCommMessage = {
+    type: type,
+    to: to,
+    from: from,
+    id: Math.random().toString().slice(2, 5),
+    ...(thid !== undefined) && { thid: thid },
+    body: body
+  }
+
+  const packed_msg = await agent.packDIDCommMessage({ message: message, packing: "authcrypt" })
+  await agent.sendDIDCommMessage({ messageId: message.id, packedMessage: packed_msg, recipientDidUrl: message.to })
+
+  return message.id
 }
