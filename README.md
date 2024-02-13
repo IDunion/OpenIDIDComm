@@ -113,7 +113,9 @@ It is also possible to create a separate DIDComm connection parallel to the usua
 
 ### DIDComm Token
 
-Another approach uses the OAuth 2.0 inherent concept of [scopes](https://oauth.net/2/scope/). The DIDComm Ping sends the Access Token in order to create a session correlation.
+Another approach uses the OAuth 2.0 inherent concept of [scopes](https://oauth.net/2/scope/). The Access Token `scope` parameter is extended with the `DIDComm` value to express the usage for the DIDComm channel creation. The Wallet then sends a DIDComm Ping containing the Access Token in order to create a session correlation.
+
+![OID4VC Diagram DIDComm Token](/Diagramme/OID4VCI/DIDComm_Token/didcomm_token.png)
 
 ## Comparison of the current solutions
 
