@@ -1,0 +1,71 @@
+@startuml
+!theme vibrant
+!pragma teoz true
+title "OID4VC + DIDComm separated"
+participant Wallet
+participant "Issuer" as CI
+skinparam ParticipantPadding 75
+skinparam sequenceMessageAlign reverseDirection
+
+Wallet <-> CI: Obtain Issuer metadata
+rnote left of CI #FFFFFF
+{
+  <color green>"didcomm_did":"did:example:issuer"</color>,
+  credentials_supported: [{
+    "id": "UniverseityDegree_JWT",
+    "credential_definition": {
+      "name": {...},
+      "degree: {...}
+    },
+    <color green>"didcomm_required":"REQUIRED"</color>
+  },
+  {...}]
+}
+end rnote
+
+|||
+
+alt Authorized Flow
+  Wallet -> CI: Authorization Request (type(s) of Credentials to be issued)
+  Wallet <- CI: Authorization Response (code)
+  |||
+  Wallet -> CI: Token Request (code)
+  Wallet <- CI: Token Response (token, nonce)
+else Pre-Authorized Flow
+  Wallet -> CI: Token Request (Pre-Auth-Code, pin)
+  Wallet <- CI: Token Response (token, nonce)
+end
+rnote left of CI #FFFFFF
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: no-store
+
+  {
+    "access_token": "eyJhbGciOiJSUzI1N..sHQ",
+    "token_type": "bearer",
+    "expires_in": 86400,
+    "c_nonce": "tZignsnFbp",
+    "c_nonce_expires_in": 86400,
+    "scope": "UniversityDegreeCredential <color green>DIDComm</color>"
+  }
+end rnote
+
+|||
+|||
+
+group DIDComm
+  Wallet -> CI: Ping (token)
+  Wallet <- CI: Acknowledge
+end
+
+|||
+
+Wallet -> CI: Credential Request (token, proof(s))
+
+CI -> CI: Check for valid \nDIDComm \nConnection
+alt Check successful
+  Wallet <- CI: Credential Response (Credential)
+else Check failed
+  Wallet <- CI: Credential Error Response \n(No DIDComm Connection)
+end
+@enduml
