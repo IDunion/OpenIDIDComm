@@ -111,6 +111,10 @@ It is also possible to create a separate DIDComm connection parallel to the usua
 
 ![OID4VC Diagram](/Diagramme/OID4VCI/DIDComm_Separated/didcomm_separated.png)
 
+### DIDComm Token
+
+Another approach uses the OAuth 2.0 inherent concept of [scopes](https://oauth.net/2/scope/). The DIDComm Ping sends the Access Token in order to create a session correlation.
+
 ## Comparison of the current solutions
 
 ||DID JWT<br/>(without Deferred Credential Endpoint)|DID JWT with Deferred Credential Endpoint|DID JWT with Deferred Credential Endpoint as fallback (mixed)|Separate DIDComm|DIDComm Token|
