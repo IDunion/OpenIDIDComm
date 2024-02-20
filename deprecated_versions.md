@@ -15,3 +15,7 @@ Optional:
 - Solution supports usage of different DIDs
 
 ![OID4VC Diagram](/Diagramme/OID4VCI/SIOP/siop.png)
+
+**Reasons for deprecation:**
+- usage of two distinct flows resulting in an overhead
+- more synchronisation of states needed
