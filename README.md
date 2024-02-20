@@ -66,21 +66,6 @@ Every Solution should describe how it solves the requirements and required steps
 Furthermore, every solution should evaluate its benefits (i. e. what secondary requirements were met) and limitations (i. e. what secondary requirements were not met).  
 And contain sequence diagrams for visualization.
 
-### SIOP
-
-This solution utilizes "Self Issued Identity Providers" (SIOP) to pass the Wallet's DID to the Issuer.
-
-Required:
-- Solution established additional DIDComm channel
-- Solution supports both flows
-- Solution enforces DIDComm channel
-- Solution doesn't modify existing OID specs
-
-Optional:
-- Solution supports usage of different DIDs
-
-![OID4VC Diagram](/Diagramme/OID4VCI/SIOP/siop.png)
-
 ### DID JWT
 
 This solution utilizes "JSON Web Tokens" to pass a DID in the credential request and at the same time proving possession of the key material.
