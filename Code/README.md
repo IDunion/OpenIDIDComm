@@ -16,7 +16,10 @@ To start the Issuer use the following command with the according solution name (
 ```shell
 yarn ts-node --esm ./issuer_interface_did_separated.ts
 ```
-The programm gives you an interactive interface to use. One first needs to create an Issuer, run the issuer instance, and create an offer. This offer can be used by other Clients (Wallets) to receive Credentials. 
+The programm gives you an interactive interface to use. One first needs to create an Issuer (for example by using the default values), run the created issuer instance, and create an offer. This offer can be used by other Clients (Wallets) to receive Credentials. 
+
+![Issuer Interface](/Code/readme_images/issuer_interface.png)
+
 After a successful issuance, you can send messages via the newly created DIDComm channel.
 
 ### Client (Wallet)
