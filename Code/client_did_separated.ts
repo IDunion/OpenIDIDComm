@@ -181,7 +181,7 @@ async function main(offer_uri?: string) {
 
   // Credential Anfrage
   console.log("\n< Hole Credential")
-  const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({ request: client.credentialOffer, metadata: client.endpointMetadata }).build()
+  const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({ request: client.credentialOffer, metadata: client.endpointMetadata }).withTokenFromResponse(token).build()
   let credentialRequest = await credentialRequestClient.createCredentialRequest({
     proofInput: proof,
     credentialTypes: ["VerifiableCredential", "UniversityDegreeCredential"],
