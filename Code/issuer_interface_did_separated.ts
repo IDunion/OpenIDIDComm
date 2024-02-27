@@ -1,6 +1,6 @@
 import prompts from 'prompts'
 import { agent } from './issuer_agent.js'
-import { Issuer } from './issuer_did_separated.js'
+import { Issuer } from './issuer_did_token.js'
 import { IDIDCommMessage } from '@veramo/did-comm'
 import qr from "qrcode-terminal"
 
