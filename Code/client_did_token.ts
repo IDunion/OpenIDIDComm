@@ -50,11 +50,10 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
 
   if (message.type == "ack_registration") {
     debug(message)
-    const { connection_id } = message.data as { connection_id: string }
-    console.log("> Registrierung ConnectionID #" + connection_id + "\n")
+    console.log("> Registrierung erfolgreich\n")
 
     if (outstanding_registrations[message.threadId!]) {
-      outstanding_registrations[message.threadId!].acknowledge(connection_id)
+      outstanding_registrations[message.threadId!].acknowledge()
     }
   }
   else if (message.type == "message") {
@@ -97,7 +96,7 @@ const server_instance = server.listen(8081, () => {
 /* CLIENT FLOW */
 /***************/
 
-var outstanding_registrations: Record<string, { acknowledge: (val: string) => void }> = {}
+var outstanding_registrations: Record<string, { acknowledge: () => void }> = {}
 var credential: W3CVerifiableCredential | undefined
 var early_resolve: (val: W3CVerifiableCredential) => void
 var early_reject: (error: any) => void
@@ -134,8 +133,6 @@ async function main(offer_uri?: string) {
 
   const accessTokenClient = new AccessTokenClient();
   const response = await accessTokenClient.acquireAccessToken({ credentialOffer: client.credentialOffer, metadata: client.endpointMetadata });
-  const correlation_id = response.origResponse.headers.get('DIDComm_Correlation_ID') ?? 0
-  console.log("DIDComm_Correlation_ID:", correlation_id)
   const token = response.successBody! ?? {}
   debug(token)
 
@@ -167,11 +164,11 @@ async function main(offer_uri?: string) {
   }
 
   // Warte auf DidComm Connection ID
-  const connection_id = await new Promise<string>(async (res, rej) => {
+  await new Promise<string>(async (res, rej) => {
     const timeoutID = setTimeout(rej, 4000)
 
     const msg_id = await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "register", { access_token: token.access_token })
-    outstanding_registrations[msg_id] = { acknowledge: (val: any) => { clearTimeout(timeoutID); res(val) } }
+    outstanding_registrations[msg_id] = { acknowledge: () => { clearTimeout(timeoutID); res("") } }
     console.log("\n< Registriere DidComm")
   }).catch(e => { 
     console.error(red + 'DIDComm Connection failed, aborting OID4VCI flow...' + end)
