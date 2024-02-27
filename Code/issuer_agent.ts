@@ -135,6 +135,6 @@ export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataS
       }
     }),
     new MessageHandler({ messageHandlers: [new DIDCommMessageHandler()] }),
-    new DIDComm([new DIDCommHttpTransport()])
+    new DIDComm()
   ],
 })

@@ -88,7 +88,7 @@ export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataS
     }),
     new CredentialPlugin(),
     new MessageHandler({ messageHandlers: [new DIDCommMessageHandler()] }),
-    new DIDComm([new DIDCommHttpTransport()]),
+    new DIDComm(),
     new DidAuthSiopOpAuthenticator()
   ],
 })
