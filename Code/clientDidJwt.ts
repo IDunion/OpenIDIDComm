@@ -11,6 +11,7 @@ import bodyParser from 'body-parser'
 import { W3CVerifiableCredential } from '@veramo/core';
 import { W3cMessageHandler } from '@veramo/credential-w3c';
 import * as readline from "readline"
+import prompts from 'prompts';
 
 var verbose = false
 const red = "\x1b[41m"
@@ -59,12 +60,12 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
       body: {}
     }
 
-    if (i == 2) {
+    //if (i == 2) {
       console.log("< Pong")
       const packed_msg = await agent.packDIDCommMessage({ message: response, packing: "authcrypt" })
-      agent.sendDIDCommMessage({ messageId: "123", packedMessage: packed_msg, recipientDidUrl: message.from! })
-    }
-    i++
+      agent.sendDIDCommMessage({ messageId: response.id, packedMessage: packed_msg, recipientDidUrl: message.from! })
+    //}
+    //i++
   }
   else if (message.type == "credential_ready") {
     const transaction_id = (message.data! as { transaction_id: string }).transaction_id
@@ -100,14 +101,18 @@ var early_reject: (error: any) => void
 var client: OpenID4VCIClient
 var c_nonce: string
 
-async function main() {
-  // Scanne QR-Code
-  console.log("\n< Scan QR Code")
-  const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
-  console.log("> Preauth Code")
-  debug(response)
+async function main(offer_uri?: string) {
+  
+  if (!offer_uri) {
+    // Scanne QR-Code
+    console.log("\n< Scan QR Code")
+    //const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
+    const response = (await prompts({ type: 'text', name: 'value', message: 'Enter Offer:' })).value as string;
+    console.log("> Preauth Code")
+    debug(response)
 
-  const offer_uri = response.toString()
+    offer_uri = response
+  }
 
   // Client erstellen
   console.log("\n< Hole Metadaten")
@@ -200,16 +205,11 @@ async function main() {
     }
     console.log(green, "> Credential erhalten:", end, "\n\n", credential)
 
-    var rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-
-    while (true) {
-      rl.question("Message: ", (answer) => {
-
-      })
-    }
+    await prompts({
+      type: "text",
+      name: "_",
+      message: "press Enter to quit"
+    })
   }
   else {
     console.log(red, "> Credential Error: ", end, credentialResponse.errorBody)

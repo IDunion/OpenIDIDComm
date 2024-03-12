@@ -223,6 +223,12 @@ async function main(offer_uri?: string) {
       credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
     }
     console.log(green + "> Credential erhalten:", end, "\n", credential)
+
+    await prompts({
+      type: "text",
+      name: "_",
+      message: "press Enter to quit"
+    })
   }
   else console.log(red + "> Credential Error: ", end, credentialResponse.errorBody)
 }

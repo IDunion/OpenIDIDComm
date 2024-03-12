@@ -5,6 +5,7 @@ import { IssuerDidToken } from './issuerDidToken.js'
 import { IDIDCommMessage } from '@veramo/did-comm'
 import qr from "qrcode-terminal"
 import { IIssuer } from './issuerInterface.js'
+import { IssuerDidJwt } from './issuerDidJwt.js'
 
 enum IssuerActions {
     CREATE_ISSUER,
@@ -21,11 +22,11 @@ enum IssuerTypes {
 }
 
 var current_store_id = 0
-var issuers: Record<string,IIssuer> = {}
+var issuers: Record<string, IIssuer> = {}
 
 main();
 
-async function main(){
+async function main() {
     while (true) {
         const response = await prompts({
             type: 'select',
@@ -75,21 +76,22 @@ async function create_issuer() {
             { title: 'DID Token', value: IssuerTypes.DID_TOKEN }
         ]
     })
-    switch(response.issuerType){
+
+    switch (response.issuerType) {
         case IssuerTypes.DID_JWT:
-            throw new Error("Not implemented")
+            issuers[did] = await IssuerDidJwt.build(did, store_id, base_url)
             break;
         case IssuerTypes.DID_SEPARATED:
-            issuers[did] = await IssuerDidSeparated.build( did, store_id, base_url )
+            issuers[did] = await IssuerDidSeparated.build(did, store_id, base_url)
             break
         case IssuerTypes.DID_TOKEN:
-            issuers[did] = await IssuerDidToken.build( did, store_id, base_url )
+            issuers[did] = await IssuerDidToken.build(did, store_id, base_url)
             break
     }
 }
 
 async function run_issuer() {
-    const choices = Object.entries(issuers).map( ([did,issuer]) => ({ title: did, value: did }) )
+    const choices = Object.entries(issuers).map(([did, issuer]) => ({ title: did, value: did }))
 
     const did = (await prompts({
         type: 'select',
@@ -97,12 +99,12 @@ async function run_issuer() {
         message: 'Pick an Issuer:',
         choices: choices
     })).value as string
-    
+
     issuers[did].start_server()
 }
 
-async function create_offer( preauth_code: string) {
-    const choices = Object.entries(issuers).map( ([did,issuer]) => ({ title: did, value: did }) )
+async function create_offer(preauth_code: string) {
+    const choices = Object.entries(issuers).map(([did, issuer]) => ({ title: did, value: did }))
 
     const did = (await prompts({
         type: 'select',
@@ -123,7 +125,7 @@ async function create_offer( preauth_code: string) {
 }
 
 async function start_didcomm_chat() {
-    var choices = Object.entries(issuers).map( ([did,issuer]) => ({ title: did, value: did }) )
+    var choices = Object.entries(issuers).map(([did, issuer]) => ({ title: did, value: did }))
 
     const issuer_did = (await prompts({
         type: 'select',
@@ -132,7 +134,7 @@ async function start_didcomm_chat() {
         choices: choices
     })).value as string
 
-    choices = Object.entries(issuers[issuer_did].confirmed_connections).map( ([connection_id,{did,confirmed_at}]) => ({ title: did, value: did }))
+    choices = Object.entries(issuers[issuer_did].confirmed_connections).map(([connection_id, { did, confirmed_at }]) => ({ title: did, value: did }))
 
     const client_did = (await prompts({
         type: 'select',
@@ -144,14 +146,14 @@ async function start_didcomm_chat() {
     // DIDComm chat with selected Client and Issuer
     const iss = issuers[issuer_did]
 
-    while(true){
+    while (true) {
         const text = (await prompts({
             type: 'text',
             name: 'message',
             message: `Enter a message:`
         })).message as string
 
-        if (text.startsWith('/')){
+        if (text.startsWith('/')) {
             // Its a command
             switch (text) {
                 case '/quit':
@@ -162,10 +164,10 @@ async function start_didcomm_chat() {
                     break
                 case '/re-offer':
                     // Send invitation to re-offer the credential
-                    iss.send_didcomm_msg(client_did, issuer_did, 'opendid4vci-re-offer', {offer: await iss.create_offer("456")})
+                    iss.send_didcomm_msg(client_did, issuer_did, 'opendid4vci-re-offer', { offer: await iss.create_offer("456") })
                     break
                 case '/revoke':
-                    iss.send_didcomm_msg(client_did, issuer_did, 'opendid4vci-revocation', {message: 'Hello my friend, you got scammed'})
+                    iss.send_didcomm_msg(client_did, issuer_did, 'opendid4vci-revocation', { message: 'Hello my friend, you got scammed' })
                     break
                 default:
                     console.error('Unknown command')
@@ -174,12 +176,12 @@ async function start_didcomm_chat() {
         }
         else {
             // Normal Message
-            iss.send_didcomm_msg(client_did, issuer_did, 'message', {message: text})
+            iss.send_didcomm_msg(client_did, issuer_did, 'message', { message: text })
         }
     }
 }
 
-function print_help_dialog(){
+function print_help_dialog() {
     console.log(
         '/help      shows this help dialog\n' +
         '/q /quit   exit to menu\n' +
