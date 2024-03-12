@@ -10,6 +10,7 @@ import { Credential } from '@veramo/data-store'
 import * as readline from "readline"
 import { IIdentifier } from '@veramo/core'
 import * as http from "http"
+import { IIssuer } from './issuerInterface.js'
 
 //terminal farben
 var verbose = false
@@ -17,7 +18,7 @@ const red = "\x1b[41m"
 const green = "\x1b[42m"
 const end = "\x1b[0m"
 
-export class Issuer {
+export class IssuerDidToken implements IIssuer {
     identifier: IIdentifier;
     store_id: string
     base_url: string
@@ -70,7 +71,7 @@ export class Issuer {
             correlationId: store_id
         })
 
-        return new Issuer(identifier, store_id, base_url)
+        return new IssuerDidToken(identifier, store_id, base_url)
     }
 
     /**********/

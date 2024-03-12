@@ -1,8 +1,10 @@
 import prompts from 'prompts'
 import { agent } from './issuer_agent.js'
-import { Issuer } from './issuer_did_token.js'
+import { IssuerDidSeparated } from './issuer_did_separated.js'
+import { IssuerDidToken } from './issuer_did_token.js'
 import { IDIDCommMessage } from '@veramo/did-comm'
 import qr from "qrcode-terminal"
+import { IIssuer } from './issuerInterface.js'
 
 enum IssuerActions {
     CREATE_ISSUER,
@@ -11,8 +13,15 @@ enum IssuerActions {
     SEND_DIDCOMM_MESSAGE,
     QUIT
 };
+
+enum IssuerTypes {
+    DID_TOKEN,
+    DID_SEPARATED,
+    DID_JWT
+}
+
 var current_store_id = 0
-var issuers: Record<string,Issuer> = {}
+var issuers: Record<string,IIssuer> = {}
 
 main();
 
@@ -56,7 +65,27 @@ async function create_issuer() {
     const base_url = (await prompts({ type: 'text', name: 'value', message: 'Enter Base URL:', initial: "http://localhost:8080" })).value as string;
     const store_id = String(current_store_id++)
 
-    issuers[did] = await Issuer.build( did, store_id, base_url )
+    const response = await prompts({
+        type: 'select',
+        name: 'issuerType',
+        message: 'Select the Issuer Type',
+        choices: [
+            { title: 'DID JWT', value: IssuerTypes.DID_JWT },
+            { title: 'DID Separated', value: IssuerTypes.DID_SEPARATED },
+            { title: 'DID Token', value: IssuerTypes.DID_TOKEN }
+        ]
+    })
+    switch(response.issuerType){
+        case IssuerTypes.DID_JWT:
+            throw new Error("Not implemented")
+            break;
+        case IssuerTypes.DID_SEPARATED:
+            issuers[did] = await IssuerDidSeparated.build( did, store_id, base_url )
+            break
+        case IssuerTypes.DID_TOKEN:
+            issuers[did] = await IssuerDidToken.build( did, store_id, base_url )
+            break
+    }
 }
 
 async function run_issuer() {

@@ -10,6 +10,7 @@ import { Credential } from '@veramo/data-store'
 import * as readline from "readline"
 import { IIdentifier } from '@veramo/core'
 import * as http from "http"
+import { IIssuer } from './issuerInterface.js'
 
 //terminal farben
 var verbose = false
@@ -19,7 +20,7 @@ const end = "\x1b[0m"
 
 var allowed_pings: string[] = [];
 
-export class Issuer {
+export class IssuerDidSeparated implements IIssuer {
     identifier: IIdentifier;
     store_id: string
     base_url: string
@@ -71,7 +72,7 @@ export class Issuer {
             correlationId: store_id
         })
 
-        return new Issuer(identifier, store_id, base_url)
+        return new IssuerDidSeparated(identifier, store_id, base_url)
     }
 
     /**********/
