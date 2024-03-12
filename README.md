@@ -14,9 +14,30 @@ To understand OpenID4VC, it is helpful to first understand OAuth and OpenID Conn
     - for a brief overview, just have a look at [OAuth 2.0 simplified](https://aaronparecki.com/oauth-2-simplified/)
 - [OpenID Connect](https://openid.net/developers/how-connect-works/)
 
-Finally, the [OpenID4VC spec](https://openid.net/sg/openid4vc/specifications/) defines subtleties in relation to verifiable credentials:
-- [OpenID4VCI](https://openid.github.io/OpenID4VCI/openid-4-verifiable-credential-issuance-wg-draft.html)
-- [OpenID4VP](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-wg-draft.html)
+Finally, the [OpenID4VC spec](https://openid.net/sg/openid4vc/specifications/) (OpenID for Verifiable Credentials ) is a standard based on OpenID Connect which can be used to issue and use Verifiable Credentials. One can distinguish OID4CVI and OID4VP. For a better overview, the key concepts of OID4VCI and OID4VP are listed below.
+
+#### OID4VCI
+[OID4VCI](https://openid.github.io/OpenID4VCI/openid-4-verifiable-credential-issuance-wg-draft.html) is used for the issuance of Verifiable Credentials. It provides an API containing (not only) the following endpoints:
+
+- **Credential Endpoint**: mandatory endpoint, from which credentials are issued
+- **Batch Credential Endpoint**: optional endpoint for the issuance of multiple credentials at once
+- **Deferred Credential Endpoint**: optional endpoint for the deferred issuance of credentials
+
+A brief description of the OID4VCI workflow shows how the protocol works: For each credential, the Wallet sends one Credential Request to the Credential Endpoint. This request is a POST request specifying the `format`, the `proof`, the `credential_identifier` and `credential_response_encryption` in its body. Each issuance can be further described using the following characteristics:
+
+- **Authorization Code Flow vs. Pre-Authorized Code Flow**:  issuer uses end-user authentication at the Authorization endpoint vs. issuer uses out-of-band mechanisms outside of the flow
+- **Same-device vs. Cross-device Credential Offer**: offer is received from the same device the wallet is installed on vs. offer is communicated to wallet 
+- **Wallet initiated vs. Issuer initiated**: request is sent to the issuer directly from the wallet vs. request is sent to the issuer after communication with the issuer
+- **Immediate vs. Deferred**: credential is directly issued vs. credential is issued after time
+
+
+#### OID4VP
+
+[OpenID4VP](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-wg-draft.html) is used for the presentation of Verifiable Credentials. It extends the OAuth2.0 flow by introducing the so called VP Token as a container which allows users to present their presentations to verifiers via a wallet. One can distinguish different scenarios where the verifier and the user are using the same device (Same-Device-Flow) or using different devices (Cross-Device-Flow):
+
+- **Same-Device-Flow**: Authorization Request und Response are passed with redirects between the user’s wallet and the verifier
+- **Cross-Device-Flow**: The Authorization Request of the verifier is rendered as a QR-code which can be scanned by the user using its wallet. 
+
 
 ### DIDComm
 
