@@ -1,4 +1,4 @@
-import { agent, resolvers } from './issuer_agent.js'
+import { agent, resolvers } from './issuerAgent.js'
 import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse, ProofOfPossession, CredentialResponse, CredentialIssuerMetadata, CredentialSupported } from '@sphereon/oid4vci-common'
 import { ICredential } from '@sphereon/ssi-types'
 import express, { Express, Request, Response } from 'express'
@@ -17,8 +17,6 @@ const red = "\x1b[41m"
 const green = "\x1b[42m"
 const end = "\x1b[0m"
 
-var allowed_pings: string[] = [];
-
 export class Issuer {
     identifier: IIdentifier;
     store_id: string
@@ -27,6 +25,7 @@ export class Issuer {
     server: http.Server | undefined
     confirmed_connections: Record<string, { did: string, confirmed_at: number }> = {};
     defered_creds: Record<string, { status: string, credential?: CredentialResponse }> = {};
+    access_tokens: Record<string, { metadata: AccessTokenResponse, confirmed_did?: string }> = {};
 
     constructor(identifier: IIdentifier, store_id: string, base_url: string) {
         this.identifier = identifier
@@ -103,10 +102,10 @@ export class Issuer {
         app.post("/token", express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
             console.log("\n> Token Anfrage")
             this.debug(req.body)
+
             const token = await this.get_token(req.body)
-            const correlation_id = Math.random().toString().slice(2, 6)
-            allowed_pings.push(correlation_id)
-            res.set('DIDComm_Correlation_ID', correlation_id)
+            this.access_tokens[token.access_token] = { metadata: token }
+            
             res.send(token)
             console.log("< Token")
             this.debug(token)
@@ -117,25 +116,33 @@ export class Issuer {
             console.log("\n> Credential Anfrage")
             this.debug(req.body)
 
+            // Prüfe Access Token
+            const access_token = req.get("authorization")!.split(" ")[1]
+            const result = await verifyJWT(access_token, {resolver: resolvers})
+            if (!result.verified || result.issuer != this.identifier.did){
+                res.status(400).json({ error: "invalid_access_token" })
+                console.log(red + "< Ungültiger Access Token" + end)
+                return
+            }
+
             // Prüfe DidComm Verbindung
             const supported = (await agent.oid4vciStoreGetMetadata({ correlationId: "123" }))?.credentials_supported[0] as CredentialSupported & { didcommRequired: string }
-            const connection_id = req.body.connection_id as string
 
             if (supported.didcommRequired == "Required") {
-                if (connection_id === undefined || !this.confirmed_connections[connection_id]) {
+                if (!this.access_tokens[access_token].confirmed_did) {
                     res.status(400).json({ error: "didcomm_unconfirmed" })
                     console.log(red + "< DidComm unbestätigt" + end)
                     return
                 }
-                else if ((Date.now() - this.confirmed_connections[connection_id].confirmed_at) / 1000 > 60) {
+                /*else if ((Date.now() - this.confirmed_connections[connection_id].confirmed_at) / 1000 > 60) {
                     res.status(400).json({ error: "didcomm_expired" })
                     console.log(red + "< DidComm abgelaufen" + end)
                     return
-                }
+                }*/
             }
 
             var confirmed_did: string | undefined
-            if (supported.didcommRequired == "Required") confirmed_did = this.confirmed_connections[connection_id].did
+            if (supported.didcommRequired == "Required") confirmed_did = this.access_tokens[access_token].confirmed_did
 
             // Automatischer deferral nach 3s
             let deferal: { "transaction_id": string, "c_nonce": string } | undefined
@@ -166,6 +173,7 @@ export class Issuer {
                     else {
                         res.sendStatus(500)
                         console.log(red, "< Interner Fehler", end)
+                        this.debug(e)
                     }
                 }
                 else this.defered_creds[deferal.transaction_id].status = "FAILED"
@@ -193,19 +201,21 @@ export class Issuer {
             if (message.type == "register") {
                 res.sendStatus(202)
 
-                // Prüfe ob der Ping zu einem Flow gehört
-                const correlation_id = (message.data! as any).correlation_id as unknown as string ?? ''
-                if (!allowed_pings.includes(correlation_id)) {
-                    console.log("\n> Unautorisierter DIDComm Ping")
+                // Prüfe Access Token
+                const access_token:string = (message.data! as any).access_token
+                const result = await verifyJWT(access_token, {resolver: resolvers})
+                if (
+                    !result.verified || !this.access_tokens[access_token].metadata.scope!.split(" ").includes("DidComm") ||
+                    result.issuer != this.identifier.did
+                ) {
+                    console.log("\n> Ungültiger Access Token DIDComm Ping")
                     return
                 }
-                delete allowed_pings[allowed_pings.indexOf(correlation_id)]
 
                 console.log("\n> Register DidComm")
-                const connection_id = String(Math.random().toString(16).slice(2))
-                this.confirmed_connections[connection_id] = { did: message.from!, confirmed_at: Date.now() }
-                this.send_didcomm_msg(message.from!, this.identifier.did, "ack_registration", { connection_id: connection_id }, message.id)
-                console.log("< Connection ID #" + connection_id + "\n")
+                this.access_tokens[access_token].confirmed_did = message.from!
+                this.send_didcomm_msg(message.from!, this.identifier.did, "ack_registration", {}, message.id)
+                console.log("< DidComm registriert\n")
             }
             else if (message.type == "message") {
                 res.sendStatus(202)
@@ -243,11 +253,13 @@ export class Issuer {
     }
 
     private async get_token(request: AccessTokenRequest): Promise<AccessTokenResponse> {
-        const response = await agent.oid4vciCreateAccessTokenResponse({
+        var response = await agent.oid4vciCreateAccessTokenResponse({
             request: request,
             credentialIssuer: this.store_id,
             expirationDuration: 100000
         })
+
+        response.scope = "UniversityDegreeCredential DidComm"
 
         return response
     }
