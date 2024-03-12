@@ -1,7 +1,7 @@
 import prompts from 'prompts'
-import { agent } from './issuer_agent.js'
-import { IssuerDidSeparated } from './issuer_did_separated.js'
-import { IssuerDidToken } from './issuer_did_token.js'
+import { agent } from './issuerAgent.js'
+import { IssuerDidSeparated } from './issuerDidSeparated.js'
+import { IssuerDidToken } from './issuerDidToken.js'
 import { IDIDCommMessage } from '@veramo/did-comm'
 import qr from "qrcode-terminal"
 import { IIssuer } from './issuerInterface.js'

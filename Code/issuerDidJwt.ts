@@ -1,4 +1,4 @@
-import { agent, resolvers } from './issuer_agent.js'
+import { agent, resolvers } from './issuerAgent.js'
 import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse, ProofOfPossession, CredentialResponse } from '@sphereon/oid4vci-common'
 import { ICredential } from '@sphereon/ssi-types'
 import express, { Express, Request, Response } from 'express'
