@@ -14,18 +14,18 @@ npm install
 ### Issuer
 To start the Issuer use the following command with the according solution name (currently only did_spearated is supported). Confirm the installation of tsx:
 ```shell
-npx tsx ./issuer_interface_did_separated.ts
+npx tsx ./issuerCli.ts
 ```
 The programm gives you an interactive interface to use. One first needs to create an Issuer (for example by using the default values), run the created issuer instance, and create an offer. This offer can be used by other Clients (Wallets) to receive Credentials. 
 
-![Issuer Interface](/Code/readme_images/issuer_interface.png)
+![Issuer Interface](/Code/readmeImages/issuerInterface.png)
 
 After a successful issuance, you can send messages via the newly created DIDComm channel.
 
 ### Client (Wallet)
 To start the Client use the following commaned:
 ```shell
-npx tsx ./client_did_separated.ts
+npx tsx ./clientDidToken.ts
 ```
 The programm expects you to enter the previously generated offer (use the url above the QR-code in the Isser-terminal). Afterwards both parties will go through our extended OID4VC flow and the Client will recieve a Credential aswell as having a DIDComm channel now.
 Any messages send via DIDComm from the Issuer to the Client will be displayed (currently only messages from Issuer to Client are supported)
