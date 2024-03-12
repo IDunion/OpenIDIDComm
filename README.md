@@ -136,3 +136,8 @@ Another approach uses the OAuth 2.0 inherent concept of [scopes](https://oauth.n
 |DIDComm Initiator|Issuer|Issuer|Issuer|Holder|Holder|
 |Message modification|Credential Request: Body (Header possible)|Credential Request: Body (Header possible)|Credential Request: Body (Header possible)|Credential Request: Header|Access Token: Scope extended|
 |Session correlation|DID JWT in Credential Request +<br>DIDComm Ping with Nonce|DID JWT in Credential Request +<br>DIDComm Ping with Nonce|DID JWT in Credential Request +<br>DIDComm Ping with Nonce|DIDComm Ping with Correlation ID +<br>DIDComm Acknowledge and Credential Request with one-time-code|DIDComm Ping with Access Token|
+
+
+## Further work
+
+To make it possible to execute the various issuance methods without having to commit to a dedicated method before starting the issuer client, it seems conceivable to adapt the issuer design. With the help of extensions for the supported methods (currently DID JWT, DID Separated and DID Token), it should be possible to cover all methods within a single issuer client and handle the requests accordingly depending on their content.
