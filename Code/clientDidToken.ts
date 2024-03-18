@@ -48,17 +48,22 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
   const message = await agent.handleMessage({ raw: req.body.toString() })
   res.sendStatus(202)
 
-  if (message.type == "ack_registration") {
+  if (message.type == "https://didcomm.org/oidassociate/1.0/acknowledge_token") {
     debug(message)
-    console.log("> Registrierung erfolgreich\n")
+    console.log(">[DidComm] Presentation Successful\n")
 
     if (outstanding_registrations[message.threadId!]) {
       outstanding_registrations[message.threadId!].acknowledge()
     }
   }
+  else if (message.type == "https://didcomm.org/oidassociate/1.0/reject_token"){
+    debug(message)
+    const reason = (message.data! as {oidtoken:string,reason:string}).reason
+    console.log(red+">[DidComm] Presentation failed. Reason: "+reason+end+"\n")
+  }
   else if (message.type == "message") {
     let message_text = (message.data as { message: string }).message
-    console.log("\n> Message:", message_text)
+    console.log("\n>[DidComm]", message_text)
   }
   else if (message.type == "credential_ready") {
     const transaction_id = (message.data! as { transaction_id: string }).transaction_id
@@ -79,17 +84,15 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
   }
   else if (message.type == "opendid4vci-re-offer") {
     const offer = (message.data as any).offer
-    console.log("> Received a new offer:", offer)
+    console.log(">[DidComm] Received a new offer:", offer)
     await main(offer)
   }
   else if (message.type == "opendid4vci-revocation") {
-    console.log(red + "> Credential got revoked" + end)
+    console.log(red + ">[DidComm] Credential got revoked" + end)
   }
 })
 
-const server_instance = server.listen(8081, () => {
-  console.log("Server listening on port 8081\n\n")
-})
+const server_instance = server.listen(8081)
 
 
 /***************/
@@ -116,7 +119,7 @@ async function main(offer_uri?: string) {
   }
 
   // Client erstellen
-  console.log("\n< Hole Metadaten")
+  console.log("\n< Request Metadata")
   const client = await OpenID4VCIClient.fromURI({
     uri: offer_uri,
     flowType: AuthzFlowType.PRE_AUTHORIZED_CODE_FLOW,
@@ -124,19 +127,19 @@ async function main(offer_uri?: string) {
     retrieveServerMetadata: true,
   })
   const didcomm_required = (client.endpointMetadata.credentialIssuerMetadata?.credentials_supported as any[])[0].didcommRequired
-  if (didcomm_required == "Required") console.log("> Metadaten: DidComm " + red + didcomm_required + end)
-  else console.log("> Metadaten: DidComm " + green + didcomm_required + end)
+  if (didcomm_required == "Required") console.log("> Metadata: DidComm " + red + didcomm_required + end)
+  else console.log("> Metadata: DidComm " + green + didcomm_required + end)
   debug(JSON.stringify(client.endpointMetadata, null, 2))
 
   // Token holen
-  console.log("\n< Hole Token")
+  console.log("\n< Request Token")
 
   const accessTokenClient = new AccessTokenClient();
   const response = await accessTokenClient.acquireAccessToken({ credentialOffer: client.credentialOffer, metadata: client.endpointMetadata });
   const token = response.successBody! ?? {}
   debug(token)
 
-  console.log("> Token")
+  console.log("> Token: '"+token.access_token.slice(0,7)+"'. Scope: ["+token.scope+"]")
 
   // JWT-Proof bauen
   const jwt_header = encodeBase64url(JSON.stringify({
@@ -167,9 +170,9 @@ async function main(offer_uri?: string) {
   await new Promise<string>(async (res, rej) => {
     const timeoutID = setTimeout(rej, 4000)
 
-    const msg_id = await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "register", { access_token: token.access_token })
+    const msg_id = await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "https://didcomm.org/oidassociate/1.0/present_token", { access_token: token.access_token })
     outstanding_registrations[msg_id] = { acknowledge: () => { clearTimeout(timeoutID); res("") } }
-    console.log("\n< Registriere DidComm")
+    console.log("\n<[DidComm] Present Token: '"+token.access_token.slice(0,7)+"'")
   }).catch(e => { 
     console.error(red + 'DIDComm Connection failed, aborting OID4VCI flow...' + end)
     return
@@ -177,7 +180,7 @@ async function main(offer_uri?: string) {
 
 
   // Credential Anfrage
-  console.log("\n< Hole Credential")
+  console.log("\n< Request Credential. Access Token: '"+token.access_token.slice(0,7)+"'")
   const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({ request: client.credentialOffer, metadata: client.endpointMetadata }).withTokenFromResponse(token).build()
   let credentialRequest = await credentialRequestClient.createCredentialRequest({
     proofInput: proof,
@@ -222,7 +225,7 @@ async function main(offer_uri?: string) {
     else {
       credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
     }
-    console.log(green + "> Credential erhalten:", end, "\n", credential)
+    console.log(green + "> Credential:", end, "\n", credential)
 
     await prompts({
       type: "text",

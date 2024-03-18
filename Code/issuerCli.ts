@@ -121,7 +121,7 @@ async function create_offer(preauth_code: string) {
     })
 
     console.log("Offer:", offer.uri)
-    qr.generate(offer.uri, { small: true })
+    //qr.generate(offer.uri, { small: true })
 }
 
 async function start_didcomm_chat() {

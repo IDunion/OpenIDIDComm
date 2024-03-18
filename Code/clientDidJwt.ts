@@ -84,11 +84,21 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
       if (error != "issuance_pending") early_reject(error)
     }
   }
+  else if (message.type == "message") {
+    let message_text = (message.data as { message: string }).message
+    console.log("\n> Message:", message_text)
+  }
+  else if (message.type == "opendid4vci-re-offer") {
+    const offer = (message.data as any).offer
+    console.log("> Received a new offer:", offer)
+    await main(offer)
+  }
+  else if (message.type == "opendid4vci-revocation") {
+    console.log(red + "> Credential got revoked" + end)
+  }
 })
 
-const server_instance = server.listen(8081, () => {
-  console.log("Server listening on port 8081\n\n")
-})
+const server_instance = server.listen(8081)
 
 
 /***************/

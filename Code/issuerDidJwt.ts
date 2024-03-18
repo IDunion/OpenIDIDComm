@@ -12,7 +12,7 @@ import { IIdentifier } from '@veramo/core'
 import { IIssuer } from './issuerInterface.js'
 
 //terminal farben
-var verbose = true
+var verbose = false
 const red = "\x1b[41m"
 const green = "\x1b[42m"
 const end = "\x1b[0m"
@@ -186,6 +186,7 @@ export class IssuerDidJwt implements IIssuer {
                     this.debug("Pong erhalten: {id:" + message.id + ", thid:" + message.threadId + "}, Ausstehende Pings: " + Object.keys(pending_pings))
                     pending_pings[message.threadId!].acknowledge("")
                     delete pending_pings[message.threadId!]
+                    this.confirmed_connections[message.threadId!] = {did: message.from!, confirmed_at: Date.now()}
                 }
                 else console.log("\n> Abgelaufener Pong #", message.threadId)
                 res.sendStatus(200)

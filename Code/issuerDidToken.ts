@@ -92,16 +92,16 @@ export class IssuerDidToken implements IIssuer {
 
         // Hier bekommt der Client die OID4VCI Metadaten her
         app.get("/.well-known/openid-credential-issuer", async (req: Request, res: Response) => {
-            console.log("\n> Metadaten Anfrage")
+            console.log("\n> Metadaten Request")
             const metadata = await agent.oid4vciStoreGetMetadata({ correlationId: this.store_id })
             res.send(metadata)
-            console.log("< Metadaten")
+            console.log("< Metadata")
             this.debug(metadata)
         })
 
         // Hier bekommt der Client den Token
         app.post("/token", express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
-            console.log("\n> Token Anfrage")
+            console.log("\n> Token Request")
             this.debug(req.body)
 
             const token = await this.get_token(req.body)
@@ -114,7 +114,7 @@ export class IssuerDidToken implements IIssuer {
 
         // Hier bekommt der Client das Credential
         app.post("/credentials", bodyParser.json(), async (req: Request, res: Response) => {
-            console.log("\n> Credential Anfrage")
+            console.log("\n> Credential Request")
             this.debug(req.body)
 
             // Prüfe Access Token
@@ -122,7 +122,7 @@ export class IssuerDidToken implements IIssuer {
             const result = await verifyJWT(access_token, {resolver: resolvers})
             if (!result.verified || result.issuer != this.identifier.did){
                 res.status(400).json({ error: "invalid_access_token" })
-                console.log(red + "< Ungültiger Access Token" + end)
+                console.log(red + "< Invalid Access Token" + end)
                 return
             }
 
@@ -132,7 +132,7 @@ export class IssuerDidToken implements IIssuer {
             if (supported.didcommRequired == "Required") {
                 if (!this.access_tokens[access_token].confirmed_did) {
                     res.status(400).json({ error: "didcomm_unconfirmed" })
-                    console.log(red + "< DidComm unbestätigt" + end)
+                    console.log(red + "< DidComm Unregistered" + end)
                     return
                 }
                 /*else if ((Date.now() - this.confirmed_connections[connection_id].confirmed_at) / 1000 > 60) {
@@ -199,24 +199,33 @@ export class IssuerDidToken implements IIssuer {
         app.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
             const message = await agent.handleMessage({ raw: req.body.toString() })
 
-            if (message.type == "register") {
+            if (message.type == "https://didcomm.org/oidassociate/1.0/present_token") {
                 res.sendStatus(202)
+                console.log("\n> Register DidComm")
 
                 // Prüfe Access Token
                 const access_token:string = (message.data! as any).access_token
-                const result = await verifyJWT(access_token, {resolver: resolvers})
+                var result
+                try { result = await verifyJWT(access_token, {resolver: resolvers}) }
+                catch (e) { 
+                    console.log("\n"+red+"< Invalid DidComm Access Token"+end)
+                    this.send_didcomm_msg(message.from!, this.identifier.did, "https://didcomm.org/oidassociate/1.0/reject_token", {"oidtoken": access_token, "reason": (e as Error).message})
+                    return
+                }
+                
                 if (
                     !result.verified || !this.access_tokens[access_token].metadata.scope!.split(" ").includes("DidComm") ||
                     result.issuer != this.identifier.did
                 ) {
-                    console.log("\n> Ungültiger Access Token DIDComm Ping")
+                    console.log("\n"+red+"< Invalid DidComm Access Token"+end)
+                    this.send_didcomm_msg(message.from!, this.identifier.did, "https://didcomm.org/oidassociate/1.0/reject_token", {"oidtoken": access_token, "reason": "some reason"})
                     return
                 }
 
-                console.log("\n> Register DidComm")
                 this.access_tokens[access_token].confirmed_did = message.from!
-                this.send_didcomm_msg(message.from!, this.identifier.did, "ack_registration", {}, message.id)
-                console.log("< DidComm registriert\n")
+                this.confirmed_connections[access_token] = {did: message.from!, confirmed_at: Date.now()}
+                this.send_didcomm_msg(message.from!, this.identifier.did, "https://didcomm.org/oidassociate/1.0/acknowledge_token", {"oidtoken": access_token}, message.id)
+                console.log("< Acknowledge\n")
             }
             else if (message.type == "message") {
                 res.sendStatus(202)

@@ -88,9 +88,7 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
   }
 })
 
-const server_instance = server.listen(8081, () => {
-  console.log("Server listening on port 8081\n\n")
-})
+const server_instance = server.listen(8081)
 
 
 /***************/
