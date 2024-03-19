@@ -1,0 +1,32 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/ed25519-2018/v1"
+  ],
+  "id": "did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer",
+  "verificationMethod": [
+    {
+      "id": "did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer#714b1c0f16101a549482c8826ffffac938f3b10a80ba1934f352d30837809046",
+      "type": "Ed25519VerificationKey2018",
+      "controller": "did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer",
+      "publicKeyBase58": "8dFVqTPm1F9W7A3DMRgfS2SVkW7W4uPL53CB5zZrNj4R"
+    }
+  ],
+  "authentication": [
+    "did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer#714b1c0f16101a549482c8826ffffac938f3b10a80ba1934f352d30837809046"
+  ],
+  "assertionMethod": [
+    "did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer#714b1c0f16101a549482c8826ffffac938f3b10a80ba1934f352d30837809046"
+  ],
+  "keyAgreement": [
+    "did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer#714b1c0f16101a549482c8826ffffac938f3b10a80ba1934f352d30837809046"
+  ],
+  "service": [
+    {
+      "id": "123",
+      "type": "DIDCommMessaging",
+      "serviceEndpoint": "http://localhost:8080/didcomm",
+      "description": null
+    }
+  ]
+}
