@@ -1,8 +1,8 @@
-import { AccessTokenClient, OpenID4VCIClient } from '@sphereon/oid4vci-client';
+import { OpenID4VCIClient } from '@sphereon/oid4vci-client';
 import { AuthzFlowType, Alg, OpenId4VCIVersion, OpenIDResponse, CredentialResponse } from '@sphereon/oid4vci-common'
 import { CredentialRequestClientBuilder } from '@sphereon/oid4vci-client';
 import { ProofOfPossession } from '@sphereon/oid4vci-common';
-import { agent } from './clientAgent.js'
+import { agent } from '../clientAgent.js'
 import fetch from 'node-fetch';
 import { mapIdentifierKeysToDoc, decodeBase64url, encodeBase64url } from '@veramo/utils'
 import { IDIDCommMessage } from '@veramo/did-comm';
@@ -11,12 +11,11 @@ import bodyParser from 'body-parser'
 import { W3CVerifiableCredential } from '@veramo/core';
 import { W3cMessageHandler } from '@veramo/credential-w3c';
 import * as readline from "readline"
-import prompts from 'prompts'
+import prompts from 'prompts';
 
 var verbose = false
 const red = "\x1b[41m"
 const green = "\x1b[42m"
-const yellow = "\x1b[43m"
 const end = "\x1b[0m"
 
 /*********/
@@ -43,23 +42,30 @@ const global_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod
 /**********/
 const server: Express = express()
 
+var i = 0
 /* Hier kommt die kommt die DidComm Verbindungsanfrage an */
 server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
   const message = await agent.handleMessage({ raw: req.body.toString() })
   res.sendStatus(202)
 
-  if (message.type == "ack_registration") {
+  if (message.type == "ping") {
+    console.log("> Ping #" + message.id)
     debug(message)
-    const { connection_id } = message.data as { connection_id: string }
-    console.log("> Registrierung ConnectionID #" + connection_id + "\n")
-
-    if (outstanding_registrations[message.threadId!]) {
-      outstanding_registrations[message.threadId!].acknowledge(connection_id)
+    const response: IDIDCommMessage = {
+      type: "pong",
+      to: message.from!,
+      from: identifier.did,
+      id: Math.random().toString().slice(2, 5),
+      thid: message.id,
+      body: {}
     }
-  }
-  else if (message.type == "message") {
-    let message_text = (message.data as { message: string }).message
-    console.log("\n> Message:", message_text)
+
+    //if (i == 2) {
+      console.log("< Pong")
+      const packed_msg = await agent.packDIDCommMessage({ message: response, packing: "authcrypt" })
+      agent.sendDIDCommMessage({ messageId: response.id, packedMessage: packed_msg, recipientDidUrl: message.from! })
+    //}
+    //i++
   }
   else if (message.type == "credential_ready") {
     const transaction_id = (message.data! as { transaction_id: string }).transaction_id
@@ -68,7 +74,7 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
 
     // Abholung
     console.log("< Deferred Abfrage")
-    const response = await fetch("http://localhost:8080/deferred", { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
+    const response = await fetch(client.endpointMetadata.credentialIssuerMetadata!.deferred_endpoint, { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
     if (response.ok) {
       const data = await response.json() as { credential: string }
       early_resolve(JSON.parse(decodeBase64url(data.credential.split(".")[1])))
@@ -77,6 +83,10 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
       const { error } = await response.json() as { error: string }
       if (error != "issuance_pending") early_reject(error)
     }
+  }
+  else if (message.type == "message") {
+    let message_text = (message.data as { message: string }).message
+    console.log("\n> Message:", message_text)
   }
   else if (message.type == "opendid4vci-re-offer") {
     const offer = (message.data as any).offer
@@ -95,14 +105,14 @@ const server_instance = server.listen(8081)
 /* CLIENT FLOW */
 /***************/
 
-var outstanding_registrations: Record<string, { acknowledge: (val: string) => void }> = {}
 var credential: W3CVerifiableCredential | undefined
 var early_resolve: (val: W3CVerifiableCredential) => void
 var early_reject: (error: any) => void
+var client: OpenID4VCIClient
 var c_nonce: string
 
 async function main(offer_uri?: string) {
-
+  
   if (!offer_uri) {
     // Scanne QR-Code
     console.log("\n< Scan QR Code")
@@ -116,27 +126,18 @@ async function main(offer_uri?: string) {
 
   // Client erstellen
   console.log("\n< Hole Metadaten")
-  const client = await OpenID4VCIClient.fromURI({
+  client = await OpenID4VCIClient.fromURI({
     uri: offer_uri,
     flowType: AuthzFlowType.PRE_AUTHORIZED_CODE_FLOW,
     alg: Alg.EdDSA,
     retrieveServerMetadata: true,
   })
-  const didcomm_required = (client.endpointMetadata.credentialIssuerMetadata?.credentials_supported as any[])[0].didcommRequired
-  if (didcomm_required == "Required") console.log("> Metadaten: DidComm " + red + didcomm_required + end)
-  else console.log("> Metadaten: DidComm " + green + didcomm_required + end)
+  console.log("> Metadaten")
   debug(JSON.stringify(client.endpointMetadata, null, 2))
 
   // Token holen
   console.log("\n< Hole Token")
-  //const token = await client.acquireAccessToken()
-
-  const accessTokenClient = new AccessTokenClient();
-  const response = await accessTokenClient.acquireAccessToken({ credentialOffer: client.credentialOffer, metadata: client.endpointMetadata });
-  const correlation_id = response.origResponse.headers.get('DIDComm_Correlation_ID') ?? 0
-  console.log("DIDComm_Correlation_ID:", correlation_id)
-  const token = response.successBody! ?? {}
-
+  const token = await client.acquireAccessToken()
   console.log("> Token")
 
   // JWT-Proof bauen
@@ -164,29 +165,16 @@ async function main(offer_uri?: string) {
     jwt: jwt_header + '.' + jwt_payload + '.' + signature
   }
 
-  // Warte auf DidComm Connection ID
-  const connection_id = await new Promise<string>(async (res, rej) => {
-    const timeoutID = setTimeout(rej, 4000)
-
-    const msg_id = await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "register", { correlation_id: correlation_id })
-    outstanding_registrations[msg_id] = { acknowledge: (val: any) => { clearTimeout(timeoutID); res(val) } }
-    console.log("\n< Registriere DidComm")
-  }).catch(e => { 
-    console.error(red + 'DIDComm Connection failed, aborting OID4VCI flow...' + end)
-    return
-  })
-
-
   // Credential Anfrage
   console.log("\n< Hole Credential")
-  const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({ request: client.credentialOffer, metadata: client.endpointMetadata }).withTokenFromResponse(token).build()
+  const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({ request: client.credentialOffer, metadata: client.endpointMetadata }).build()
   let credentialRequest = await credentialRequestClient.createCredentialRequest({
     proofInput: proof,
     credentialTypes: ["VerifiableCredential", "UniversityDegreeCredential"],
     format: 'jwt_vc_json',
     version: OpenId4VCIVersion.VER_1_0_11
   })
-  if (didcomm_required == "Required") Object.defineProperty(credentialRequest, "connection_id", { value: connection_id, enumerable: true })
+  Object.defineProperty(credentialRequest, "didcomm_proof", { value: proof, enumerable: true })
   debug(credentialRequest)
 
   // Antwort entweder Credential oder Deferral
@@ -204,9 +192,10 @@ async function main(offer_uri?: string) {
         early_resolve = (val: W3CVerifiableCredential) => { stop = true; res(val) }
         early_reject = (error: any) => { stop = true; rej(error) }
 
+        await new Promise(r => setTimeout(r, 10000));
         while (!stop) {
           console.log("< Deferral Anfrage")
-          const response = await fetch("http://localhost:8080/deferred", { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
+          const response = await fetch(client.endpointMetadata.credentialIssuerMetadata!.deferred_endpoint, { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
           if (response.ok) {
             const data = await response.json() as { credential: string }
             return res(JSON.parse(decodeBase64url(data.credential.split(".")[1])))
@@ -224,7 +213,7 @@ async function main(offer_uri?: string) {
     else {
       credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
     }
-    console.log(green + "> Credential erhalten:", end, "\n", credential)
+    console.log(green, "> Credential erhalten:", end, "\n\n", credential)
 
     await prompts({
       type: "text",
@@ -232,7 +221,10 @@ async function main(offer_uri?: string) {
       message: "press Enter to quit"
     })
   }
-  else console.log(red + "> Credential Error: ", end, credentialResponse.errorBody)
+  else {
+    console.log(red, "> Credential Error: ", end, credentialResponse.errorBody)
+    return
+  }
 }
 
 await main()
@@ -240,26 +232,6 @@ await main()
 // close Server
 server_instance.close()
 
-/***********/
-/* UTILITY */
-/***********/
-
 function debug(message: any) {
   if (verbose == true) console.debug(message)
-}
-
-async function send_didcomm_msg(to: string, from: string, type: string, body: Object, thid?: string): Promise<string> {
-  const message: IDIDCommMessage = {
-    type: type,
-    to: to,
-    from: from,
-    id: Math.random().toString().slice(2, 5),
-    ...(thid !== undefined) && { thid: thid },
-    body: body
-  }
-
-  const packed_msg = await agent.packDIDCommMessage({ message: message, packing: "authcrypt" })
-  await agent.sendDIDCommMessage({ messageId: message.id, packedMessage: packed_msg, recipientDidUrl: message.to })
-
-  return message.id
 }

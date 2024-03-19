@@ -1,16 +1,15 @@
-import { agent, resolvers } from './issuerAgent.js'
-import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse, ProofOfPossession, CredentialResponse, CredentialIssuerMetadata, CredentialSupported } from '@sphereon/oid4vci-common'
+import { agent, resolvers } from '../issuerAgent.js'
+import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse, ProofOfPossession, CredentialResponse } from '@sphereon/oid4vci-common'
 import { ICredential } from '@sphereon/ssi-types'
 import express, { Express, Request, Response } from 'express'
+import * as http from "http"
 import bodyParser from 'body-parser'
 import { decodeBase64url } from '@veramo/utils'
-import { IDIDCommMessage, TrustPingMessageHandler } from '@veramo/did-comm'
+import { IDIDCommMessage } from '@veramo/did-comm'
 import { verifyJWT } from 'did-jwt'
 import { Credential } from '@veramo/data-store'
-import * as readline from "readline"
 import { IIdentifier } from '@veramo/core'
-import * as http from "http"
-import { IIssuer } from './issuerInterface.js'
+import { IIssuer } from '../issuerInterface.js'
 
 //terminal farben
 var verbose = false
@@ -18,9 +17,9 @@ const red = "\x1b[41m"
 const green = "\x1b[42m"
 const end = "\x1b[0m"
 
-var allowed_pings: string[] = [];
+var pending_pings: Record<string, { acknowledge: (value: unknown) => void }> = {};
 
-export class IssuerDidSeparated implements IIssuer {
+export class IssuerDidJwt implements IIssuer {
     identifier: IIdentifier;
     store_id: string
     base_url: string
@@ -72,14 +71,14 @@ export class IssuerDidSeparated implements IIssuer {
             correlationId: store_id
         })
 
-        return new IssuerDidSeparated(identifier, store_id, base_url)
+        return new IssuerDidJwt(identifier, store_id, base_url)
     }
 
     /**********/
     /* SERVER */
     /**********/
-    start_server() {
-        const app = express()
+    start_server(): void {
+        const app: Express = express()
 
         // Simuliert das scannen des QR-Codes. Vorerst nur mit Referenz auf SIOP-Anfrage
         app.get("/offer", async (req: Request, res: Response) => {
@@ -94,7 +93,7 @@ export class IssuerDidSeparated implements IIssuer {
         // Hier bekommt der Client die OID4VCI Metadaten her
         app.get("/.well-known/openid-credential-issuer", async (req: Request, res: Response) => {
             console.log("\n> Metadaten Anfrage")
-            const metadata = await agent.oid4vciStoreGetMetadata({ correlationId: this.store_id })
+            const metadata = await agent.oid4vciStoreGetMetadata({ correlationId: "123" })
             res.send(metadata)
             console.log("< Metadaten")
             this.debug(metadata)
@@ -105,9 +104,6 @@ export class IssuerDidSeparated implements IIssuer {
             console.log("\n> Token Anfrage")
             this.debug(req.body)
             const token = await this.get_token(req.body)
-            const correlation_id = Math.random().toString().slice(2, 6)
-            allowed_pings.push(correlation_id)
-            res.set('DIDComm_Correlation_ID', correlation_id)
             res.send(token)
             console.log("< Token")
             this.debug(token)
@@ -118,25 +114,18 @@ export class IssuerDidSeparated implements IIssuer {
             console.log("\n> Credential Anfrage")
             this.debug(req.body)
 
-            // Prüfe DidComm Verbindung
-            const supported = (await agent.oid4vciStoreGetMetadata({ correlationId: "123" }))?.credentials_supported[0] as CredentialSupported & { didcommRequired: string }
-            const connection_id = req.body.connection_id as string
-
-            if (supported.didcommRequired == "Required") {
-                if (connection_id === undefined || !this.confirmed_connections[connection_id]) {
-                    res.status(400).json({ error: "didcomm_unconfirmed" })
-                    console.log(red + "< DidComm unbestätigt" + end)
-                    return
-                }
-                else if ((Date.now() - this.confirmed_connections[connection_id].confirmed_at) / 1000 > 60) {
-                    res.status(400).json({ error: "didcomm_expired" })
-                    console.log(red + "< DidComm abgelaufen" + end)
-                    return
-                }
+            // Prüfe DidComm Proof
+            const didcomm_proof = req.body.didcomm_proof as ProofOfPossession
+            try {
+                var verification_result = await verifyJWT(didcomm_proof.jwt, { resolver: resolvers, audience: "http://localhost:8080" })
+                var rcpt_did = verification_result.didResolutionResult.didDocument!.id
+                var nonce = verification_result.payload.nonce
             }
-
-            var confirmed_did: string | undefined
-            if (supported.didcommRequired == "Required") confirmed_did = this.confirmed_connections[connection_id].did
+            catch (e) {
+                console.error(red + "DidComm proof ungültig:" + end + "\n", e)
+                res.status(400).json({ error: "invalid_proof" })
+                return
+            }
 
             // Automatischer deferral nach 3s
             let deferal: { "transaction_id": string, "c_nonce": string } | undefined
@@ -153,7 +142,7 @@ export class IssuerDidSeparated implements IIssuer {
 
             // Erstelle Credential und DidComm Verbindung parallel. Reagiere abhängig von Timeout
             try {
-                var credential = await this.issue_credential(req.body)
+                var [credential, didcomm_succesfull] = await Promise.all([this.issue_credential(req.body), this.establish_didcomm_connection(rcpt_did, nonce)])
                 clearTimeout(timeout)
             }
             catch (e) {
@@ -166,7 +155,7 @@ export class IssuerDidSeparated implements IIssuer {
                     }
                     else {
                         res.sendStatus(500)
-                        console.log(red, "< Interner Fehler", end)
+                        console.log(red, "< Interner Fehler:", e, end)
                     }
                 }
                 else this.defered_creds[deferal.transaction_id].status = "FAILED"
@@ -182,7 +171,7 @@ export class IssuerDidSeparated implements IIssuer {
             else {
                 this.defered_creds[deferal.transaction_id].status = "READY"
                 this.defered_creds[deferal.transaction_id].credential = credential
-                if (confirmed_did) await this.send_didcomm_msg(confirmed_did, this.identifier.did, "credential_ready", { transaction_id: deferal.transaction_id })
+                await this.send_didcomm_msg(rcpt_did, this.identifier.did, "credential_ready", { transaction_id: deferal.transaction_id })
                 console.log("\n< Credential bereit")
             }
         })
@@ -190,31 +179,48 @@ export class IssuerDidSeparated implements IIssuer {
         // Hier kommt die DidComm Verbindungsbestätigung an
         app.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
             const message = await agent.handleMessage({ raw: req.body.toString() })
-
-            if (message.type == "register") {
-                res.sendStatus(202)
-
-                // Prüfe ob der Ping zu einem Flow gehört
-                const correlation_id = (message.data! as any).correlation_id as unknown as string ?? ''
-                if (!allowed_pings.includes(correlation_id)) {
-                    console.log("\n> Unautorisierter DIDComm Ping")
-                    return
+        
+            if (message.type == "pong") {
+                console.log("> Pong #" + message.threadId)
+                if (pending_pings[message.threadId!]) {
+                    this.debug("Pong erhalten: {id:" + message.id + ", thid:" + message.threadId + "}, Ausstehende Pings: " + Object.keys(pending_pings))
+                    pending_pings[message.threadId!].acknowledge("")
+                    delete pending_pings[message.threadId!]
+                    this.confirmed_connections[message.threadId!] = {did: message.from!, confirmed_at: Date.now()}
                 }
-                delete allowed_pings[allowed_pings.indexOf(correlation_id)]
-
-                console.log("\n> Register DidComm")
-                const connection_id = String(Math.random().toString(16).slice(2))
-                this.confirmed_connections[connection_id] = { did: message.from!, confirmed_at: Date.now() }
-                this.send_didcomm_msg(message.from!, this.identifier.did, "ack_registration", { connection_id: connection_id }, message.id)
-                console.log("< Connection ID #" + connection_id + "\n")
-            }
-            else if (message.type == "message") {
-                res.sendStatus(202)
-                console.log("> DidComm Message:", (message.data! as any).message)
+                else console.log("\n> Abgelaufener Pong #", message.threadId)
+                res.sendStatus(200)
             }
             else {
                 console.log("\n> Unbekannte DidComm Nachricht")
                 res.sendStatus(404)
+            }
+        })
+        
+        // Hier kommen die deferred Statusanfragen an
+        app.post("/deferred", bodyParser.json(), async (req: Request, res: Response) => {
+            const body = req.body as { transaction_id: string, c_nonce: string }
+            console.log("\n> Deferred Anfrage")
+        
+            if (this.defered_creds[body.transaction_id]) {
+                switch (this.defered_creds[body.transaction_id].status) {
+                    case "READY":
+                        console.log(green, "< Credential bereit", end)
+                        res.send(this.defered_creds[body.transaction_id].credential!)
+                        this.debug(this.defered_creds[body.transaction_id].credential!)
+                        break
+                    case "FAILED":
+                        console.log(red, "< Credential fehlgeschlagen", end)
+                        res.status(400).json({ error: "didcomm_unreachable" })
+                        break
+                    case "PENDING":
+                        console.log("< Credential nicht bereit")
+                        res.status(400).json({ error: "issuance_pending" })
+                }
+            }
+            else {
+                console.log("< Credential nicht gefunden")
+                res.status(400).json({ error: "invalid_transaction_id" })
             }
         })
 
@@ -243,7 +249,7 @@ export class IssuerDidSeparated implements IIssuer {
         return offer.uri
     }
 
-    private async get_token(request: AccessTokenRequest): Promise<AccessTokenResponse> {
+    async get_token(request: AccessTokenRequest): Promise<AccessTokenResponse> {
         const response = await agent.oid4vciCreateAccessTokenResponse({
             request: request,
             credentialIssuer: this.store_id,
@@ -253,7 +259,7 @@ export class IssuerDidSeparated implements IIssuer {
         return response
     }
 
-    private async issue_credential(request: CredentialRequestJwtVc) {
+    async issue_credential(request: CredentialRequestJwtVc) {
         const subject = JSON.parse(decodeBase64url(request.proof!.jwt.split(".")[1])).did
 
         const credential: ICredential = {
@@ -280,13 +286,39 @@ export class IssuerDidSeparated implements IIssuer {
         return response
     }
 
-    public async send_didcomm_msg(to: string, from: string, type: string, body: Object, thid?: string): Promise<string> {
+    async establish_didcomm_connection(to: string, nonce: string) {
+        // Versucht 3x den Empfänger zu erreichen
+
+        for (let i = 0; i < 3; i++) {
+            var message_id = await this.send_didcomm_msg(to, this.identifier.did, "ping", { nonce: nonce })
+            console.log("< Ping #" + message_id)
+
+            // Promise mit Timeout von 2+i Sekunde und globaler acknowledge-Funktion
+            var timeoutID: NodeJS.Timeout
+            var pending_ping = new Promise((resolve, reject) => {
+                pending_pings[message_id] = { acknowledge: () => { clearTimeout(timeoutID); resolve("") } };
+                timeoutID = setTimeout(() => { delete pending_pings[message_id]; reject() }, 2000 + (i * 1000));
+            })
+
+            try {
+                await pending_ping
+                break
+            }
+            catch {
+                console.log("Timeout")
+                if (i == 2) throw Error("Didcomm timeout")
+            }
+        }
+
+        return true
+    }
+
+    async send_didcomm_msg(to: string, from: string, type: string, body: Object): Promise<string> {
         const message: IDIDCommMessage = {
             type: type,
             to: to,
             from: from,
             id: Math.random().toString().slice(2, 5),
-            ...(thid !== undefined) && { thid: thid },
             body: body
         }
 
@@ -296,7 +328,7 @@ export class IssuerDidSeparated implements IIssuer {
         return message.id
     }
 
-    private debug(message: any) {
+    debug(message: any) {
         if (verbose == true) console.debug(message)
     }
 }

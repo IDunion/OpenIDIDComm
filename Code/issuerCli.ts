@@ -1,11 +1,11 @@
 import prompts from 'prompts'
 import { agent } from './issuerAgent.js'
-import { IssuerDidSeparated } from './issuerDidSeparated.js'
+//import { IssuerDidSeparated } from './archive/issuerDidSeparated.js'
 import { IssuerDidToken } from './issuerDidToken.js'
 import { IDIDCommMessage } from '@veramo/did-comm'
 import qr from "qrcode-terminal"
 import { IIssuer } from './issuerInterface.js'
-import { IssuerDidJwt } from './issuerDidJwt.js'
+//import { IssuerDidJwt } from './archive/issuerDidJwt.js'
 
 enum IssuerActions {
     CREATE_ISSUER,
@@ -15,11 +15,11 @@ enum IssuerActions {
     QUIT
 };
 
-enum IssuerTypes {
+/*enum IssuerTypes {
     DID_TOKEN,
     DID_SEPARATED,
     DID_JWT
-}
+}*/
 
 var current_store_id = 0
 var issuers: Record<string, IIssuer> = {}
@@ -66,7 +66,8 @@ async function create_issuer() {
     const base_url = (await prompts({ type: 'text', name: 'value', message: 'Enter Base URL:', initial: "http://localhost:8080" })).value as string;
     const store_id = String(current_store_id++)
 
-    const response = await prompts({
+    issuers[did] = await IssuerDidToken.build(did, store_id, base_url)
+    /*const response = await prompts({
         type: 'select',
         name: 'issuerType',
         message: 'Select the Issuer Type',
@@ -87,7 +88,7 @@ async function create_issuer() {
         case IssuerTypes.DID_TOKEN:
             issuers[did] = await IssuerDidToken.build(did, store_id, base_url)
             break
-    }
+    }*/
 }
 
 async function run_issuer() {

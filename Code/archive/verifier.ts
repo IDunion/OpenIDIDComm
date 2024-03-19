@@ -2,7 +2,7 @@ import { OpenID4VCIClient} from '@sphereon/oid4vci-client';
 import { AuthzFlowType, Alg, OpenId4VCIVersion } from '@sphereon/oid4vci-common'
 import { CredentialRequestClientBuilder } from '@sphereon/oid4vci-client';
 import { ProofOfPossession } from '@sphereon/oid4vci-common';
-import { agent } from './verifier_agent.js'
+import { agent } from './verifierAgent'
 import fetch from 'node-fetch';
 import { mapIdentifierKeysToDoc, decodeBase64url, encodeBase64url } from '@veramo/utils'
 import { IDIDCommMessage } from '@veramo/did-comm';
