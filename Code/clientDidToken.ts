@@ -23,7 +23,7 @@ const end = "\x1b[0m"
 /* SETUP */
 /*********/
 const identifier = await agent.didManagerGetOrCreate({
-  alias: "void1042.github.io:web-did-host:client",
+  alias: "raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Client",
   kms: "local",
   provider: "did:web",
   options: {
