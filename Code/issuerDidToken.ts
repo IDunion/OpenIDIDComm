@@ -12,7 +12,7 @@ import { IIdentifier } from '@veramo/core'
 import * as http from "http"
 import { IIssuer } from './issuerInterface.js'
 
-//terminal farben
+//Terminal Colors :)
 var verbose = false
 const red = "\x1b[41m"
 const green = "\x1b[42m"
@@ -33,7 +33,10 @@ export class IssuerDidToken implements IIssuer {
         this.store_id = store_id
         this.base_url = base_url
     }
-
+    
+    /****************/
+    /* Constructors */
+    /****************/
     static async build(did: string, store_id: string, base_url: string) {
         const parts = did.split(":")
         const identifier = await agent.didManagerGetOrCreate({
@@ -74,23 +77,13 @@ export class IssuerDidToken implements IIssuer {
         return new IssuerDidToken(identifier, store_id, base_url)
     }
 
-    /**********/
-    /* SERVER */
-    /**********/
+    /******************/
+    /* EXPRESS SERVER */
+    /******************/
     start_server() {
         const app = express()
 
-        // Simuliert das scannen des QR-Codes. Vorerst nur mit Referenz auf SIOP-Anfrage
-        app.get("/offer", async (req: Request, res: Response) => {
-            console.log("\n> QR Code scan")
-            const preauth_code = Math.random().toString(16).slice(2)
-            const req_uri = await this.create_offer(preauth_code)
-            res.send(req_uri)
-            console.log("< Offer")
-            this.debug(req_uri)
-        })
-
-        // Hier bekommt der Client die OID4VCI Metadaten her
+        //Metdadata Endpoint
         app.get("/.well-known/openid-credential-issuer", async (req: Request, res: Response) => {
             console.log("\n> Metadaten Request")
             const metadata = await agent.oid4vciStoreGetMetadata({ correlationId: this.store_id })
@@ -99,7 +92,7 @@ export class IssuerDidToken implements IIssuer {
             this.debug(metadata)
         })
 
-        // Hier bekommt der Client den Token
+        // Token Endpoint
         app.post("/token", express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
             console.log("\n> Token Request")
             this.debug(req.body)
@@ -112,12 +105,12 @@ export class IssuerDidToken implements IIssuer {
             this.debug(token)
         })
 
-        // Hier bekommt der Client das Credential
+        // Credential Endpoint
         app.post("/credentials", bodyParser.json(), async (req: Request, res: Response) => {
             console.log("\n> Credential Request")
             this.debug(req.body)
 
-            // Prüfe Access Token
+            // Validate Token
             const access_token = req.get("authorization")!.split(" ")[1]
             const result = await verifyJWT(access_token, {resolver: resolvers})
             if (!result.verified || result.issuer != this.identifier.did){
@@ -126,7 +119,7 @@ export class IssuerDidToken implements IIssuer {
                 return
             }
 
-            // Prüfe DidComm Verbindung
+            // Enforce DidComm Requirements
             const supported = (await agent.oid4vciStoreGetMetadata({ correlationId: "123" }))?.credentials_supported[0] as CredentialSupported & { didcommRequired: string }
 
             if (supported.didcommRequired == "Required") {
@@ -145,7 +138,7 @@ export class IssuerDidToken implements IIssuer {
             var confirmed_did: string | undefined
             if (supported.didcommRequired == "Required") confirmed_did = this.access_tokens[access_token].confirmed_did
 
-            // Automatischer deferral nach 3s
+            // Automatic Deferall after 3 Seconds
             let deferal: { "transaction_id": string, "c_nonce": string } | undefined
             const timeout = setTimeout(() => {
                 deferal = {
@@ -158,7 +151,7 @@ export class IssuerDidToken implements IIssuer {
                 this.debug(deferal)
             }, 3000)
 
-            // Erstelle Credential und DidComm Verbindung parallel. Reagiere abhängig von Timeout
+            // Build Credential. Respond based on Deferral Timeout
             try {
                 var credential = await this.issue_credential(req.body)
                 clearTimeout(timeout)
@@ -169,11 +162,11 @@ export class IssuerDidToken implements IIssuer {
                 if (deferal === undefined) {
                     if ((e as Error).message == "Didcomm timeout") {
                         res.status(400).json({ error: "didcomm_unreachable" })
-                        console.log(red, "< DidComm Fehler", end)
+                        console.log(red, "< DidComm Error", end)
                     }
                     else {
                         res.sendStatus(500)
-                        console.log(red, "< Interner Fehler", end)
+                        console.log(red, "< Internal Error", end)
                         this.debug(e)
                     }
                 }
@@ -191,11 +184,11 @@ export class IssuerDidToken implements IIssuer {
                 this.defered_creds[deferal.transaction_id].status = "READY"
                 this.defered_creds[deferal.transaction_id].credential = credential
                 if (confirmed_did) await this.send_didcomm_msg(confirmed_did, this.identifier.did, "credential_ready", { transaction_id: deferal.transaction_id })
-                console.log("\n< Credential bereit")
+                console.log("\n< Credential ready")
             }
         })
 
-        // Hier kommt die DidComm Verbindungsbestätigung an
+        // DidComm Endpoint
         app.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
             const message = await agent.handleMessage({ raw: req.body.toString() })
 
@@ -203,7 +196,7 @@ export class IssuerDidToken implements IIssuer {
                 res.sendStatus(202)
                 console.log("\n> Register DidComm")
 
-                // Prüfe Access Token
+                // Validate Token
                 const access_token:string = (message.data! as any).access_token
                 var result
                 try { result = await verifyJWT(access_token, {resolver: resolvers}) }
@@ -227,12 +220,13 @@ export class IssuerDidToken implements IIssuer {
                 this.send_didcomm_msg(message.from!, this.identifier.did, "https://didcomm.org/oidassociate/1.0/acknowledge_token", {"oidtoken": access_token}, message.id)
                 console.log("< Acknowledge\n")
             }
+            // Arbitrary DidComm Message
             else if (message.type == "message") {
                 res.sendStatus(202)
                 console.log("> DidComm Message:", (message.data! as any).message)
             }
             else {
-                console.log("\n> Unbekannte DidComm Nachricht")
+                console.log("\n> Unknown DidComm Message")
                 res.sendStatus(404)
             }
         })

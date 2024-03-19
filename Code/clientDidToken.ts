@@ -43,7 +43,7 @@ const global_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod
 /**********/
 const server: Express = express()
 
-/* Hier kommt die kommt die DidComm Verbindungsanfrage an */
+/* DidComm Endpoint */
 server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
   const message = await agent.handleMessage({ raw: req.body.toString() })
   res.sendStatus(202)
@@ -67,11 +67,11 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
   }
   else if (message.type == "credential_ready") {
     const transaction_id = (message.data! as { transaction_id: string }).transaction_id
-    console.log("\n> Credential Benachrichtigung")
+    console.log("\n> Credential Ready")
     debug(message)
 
     // Abholung
-    console.log("< Deferred Abfrage")
+    console.log("< Deferred Request")
     const response = await fetch("http://localhost:8080/deferred", { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
     if (response.ok) {
       const data = await response.json() as { credential: string }
@@ -108,7 +108,7 @@ var c_nonce: string
 async function main(offer_uri?: string) {
 
   if (!offer_uri) {
-    // Scanne QR-Code
+    // Scan QR-Code (theoretically)
     console.log("\n< Scan QR Code")
     //const response = new URL(await (await fetch("http://localhost:8080/offer")).text())
     const response = (await prompts({ type: 'text', name: 'value', message: 'Enter Offer:' })).value as string;
@@ -118,7 +118,7 @@ async function main(offer_uri?: string) {
     offer_uri = response
   }
 
-  // Client erstellen
+  // Create Client 
   console.log("\n< Request Metadata")
   const client = await OpenID4VCIClient.fromURI({
     uri: offer_uri,
@@ -131,7 +131,7 @@ async function main(offer_uri?: string) {
   else console.log("> Metadata: DidComm " + green + didcomm_required + end)
   debug(JSON.stringify(client.endpointMetadata, null, 2))
 
-  // Token holen
+  // Request Token
   console.log("\n< Request Token")
 
   const accessTokenClient = new AccessTokenClient();
@@ -141,7 +141,7 @@ async function main(offer_uri?: string) {
 
   console.log("> Token: '"+token.access_token.slice(0,7)+"'. Scope: ["+token.scope+"]")
 
-  // JWT-Proof bauen
+  // Build Proof of Possession
   const jwt_header = encodeBase64url(JSON.stringify({
     typ: "openid4vci-proof+jwt",
     alg: client.alg,
@@ -166,7 +166,7 @@ async function main(offer_uri?: string) {
     jwt: jwt_header + '.' + jwt_payload + '.' + signature
   }
 
-  // Warte auf DidComm Connection ID
+  // Present Token over DidComm
   await new Promise<string>(async (res, rej) => {
     const timeoutID = setTimeout(rej, 4000)
 
@@ -179,7 +179,7 @@ async function main(offer_uri?: string) {
   })
 
 
-  // Credential Anfrage
+  // Request Credential
   console.log("\n< Request Credential. Access Token: '"+token.access_token.slice(0,7)+"'")
   const credentialRequestClient = CredentialRequestClientBuilder.fromCredentialOfferRequest({ request: client.credentialOffer, metadata: client.endpointMetadata }).withTokenFromResponse(token).build()
   let credentialRequest = await credentialRequestClient.createCredentialRequest({
@@ -190,7 +190,7 @@ async function main(offer_uri?: string) {
   })
   debug(credentialRequest)
 
-  // Antwort entweder Credential oder Deferral
+  // Response is either Credential or Deferral
   type DeferredResponse = { transaction_id: string, c_nonce: string }
   const credentialResponse = await credentialRequestClient.acquireCredentialsUsingRequest(credentialRequest) as OpenIDResponse<CredentialResponse | DeferredResponse>
 
@@ -206,7 +206,7 @@ async function main(offer_uri?: string) {
         early_reject = (error: any) => { stop = true; rej(error) }
 
         while (!stop) {
-          console.log("< Deferral Anfrage")
+          console.log("< Deferral Request")
           const response = await fetch("http://localhost:8080/deferred", { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
           if (response.ok) {
             const data = await response.json() as { credential: string }
@@ -215,7 +215,7 @@ async function main(offer_uri?: string) {
           else {
             const { error } = await response.json() as { error: string }
             if (error != "issuance_pending") return rej(error)
-            console.log("> Noch nicht bereit")
+            console.log("> Not ready yet")
           }
 
           await new Promise(r => setTimeout(r, 10000));
