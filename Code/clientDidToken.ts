@@ -43,52 +43,56 @@ const global_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod
 /**********/
 const server: Express = express()
 
-/* DidComm Endpoint */
+/* DidComm Endpoint                                   */ 
+/* TODO: Error handling, but easier to read like this */
 server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
-  const message = await agent.handleMessage({ raw: req.body.toString() })
   res.sendStatus(202)
+  process.stdout.write('>[DidComm] ')
 
-  if (message.type == "https://didcomm.org/oidassociate/1.0/acknowledge_token") {
-    debug(message)
-    console.log(">[DidComm] Presentation Successful\n")
+  const didcomm_message = await agent.handleMessage({ raw: req.body.toString() })
+  const {type,data} = didcomm_message
+  debug(didcomm_message)
 
-    if (outstanding_registrations[message.threadId!]) {
-      outstanding_registrations[message.threadId!].acknowledge()
-    }
-  }
-  else if (message.type == "https://didcomm.org/oidassociate/1.0/reject_token"){
-    debug(message)
-    const reason = (message.data! as {oidtoken:string,reason:string}).reason
-    console.log(red+">[DidComm] Presentation failed. Reason: "+reason+end+"\n")
-  }
-  else if (message.type == "message") {
-    let message_text = (message.data as { message: string }).message
-    console.log("\n>[DidComm]", message_text)
-  }
-  else if (message.type == "credential_ready") {
-    const transaction_id = (message.data! as { transaction_id: string }).transaction_id
-    console.log("\n> Credential Ready")
-    debug(message)
+  switch (type) {
+    case "https://didcomm.org/oidassociate/1.0/acknowledge_token":
+      console.log("Presentation Successful")
+      var {oidtoken} = data! as {oidtoken:string}
+      outstanding_registrations[oidtoken].acknowledge()
+      break
+    
+    case "https://didcomm.org/oidassociate/1.0/reject_token":
+      var {oidtoken,reason} = data! as {oidtoken:string,reason:String}
+      console.error(`Presentation failed. Reason: '${reason}'`)
+      break
 
-    // Abholung
-    console.log("< Deferred Request")
-    const response = await fetch("http://localhost:8080/deferred", { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
-    if (response.ok) {
-      const data = await response.json() as { credential: string }
-      early_resolve(JSON.parse(decodeBase64url(data.credential.split(".")[1])))
-    }
-    else {
-      const { error } = await response.json() as { error: string }
-      if (error != "issuance_pending") early_reject(error)
-    }
-  }
-  else if (message.type == "opendid4vci-re-offer") {
-    const offer = (message.data as any).offer
-    console.log(">[DidComm] Received a new offer:", offer)
-    await main(offer)
-  }
-  else if (message.type == "opendid4vci-revocation") {
-    console.log(red + ">[DidComm] Credential got revoked" + end)
+    case "message": // Arbitrary message
+      const {message} = data! as {message:string}
+      console.log(message)
+      break
+
+    case "credential_ready":
+      const {transaction_id} = data! as {transaction_id:string}
+      console.log(`Deferred Credential Ready. Transaction ID: ${transaction_id}`)
+
+      // Get it
+      const response = await fetch("http://localhost:8080/deferred", { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
+      const {credential} = await response.json() as {credential:string}
+      early_resolve(JSON.parse(decodeBase64url(credential.split(".")[1])))
+
+      break
+
+    case "opendid4vci-re-offer":
+      console.log('Offer Received')
+      const {offer} = data! as {offer:string}
+      main(offer)
+      break
+
+    case "opendid4vci-revocation":
+      console.warn('Credential Revoked')
+      break
+
+    default:
+      console.warn(`Unknown Message Type: '${type}'`)
   }
 })
 
@@ -99,7 +103,7 @@ const server_instance = server.listen(8081)
 /* CLIENT FLOW */
 /***************/
 
-var outstanding_registrations: Record<string, { acknowledge: () => void }> = {}
+var outstanding_registrations: Record<string /*Token*/, { acknowledge: () => void }> = {}
 var credential: W3CVerifiableCredential | undefined
 var early_resolve: (val: W3CVerifiableCredential) => void
 var early_reject: (error: any) => void
@@ -170,8 +174,8 @@ async function main(offer_uri?: string) {
   await new Promise<string>(async (res, rej) => {
     const timeoutID = setTimeout(rej, 4000)
 
-    const msg_id = await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "https://didcomm.org/oidassociate/1.0/present_token", { access_token: token.access_token })
-    outstanding_registrations[msg_id] = { acknowledge: () => { clearTimeout(timeoutID); res("") } }
+    await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "https://didcomm.org/oidassociate/1.0/present_token", { oidtoken: token.access_token })
+    outstanding_registrations[token.access_token] = { acknowledge: () => { clearTimeout(timeoutID); res("") } }
     console.log("\n<[DidComm] Present Token: '"+token.access_token.slice(0,7)+"'")
   }).catch(e => { 
     console.error(red + 'DIDComm Connection failed, aborting OID4VCI flow...' + end)

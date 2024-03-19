@@ -189,45 +189,47 @@ export class IssuerDidToken implements IIssuer {
         })
 
         // DidComm Endpoint
+        // TODO: Exception handling, but it's easier to read like this
         app.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
-            const message = await agent.handleMessage({ raw: req.body.toString() })
+            res.sendStatus(202)
+            process.stdout.write("\n>[DidComm] ")
 
-            if (message.type == "https://didcomm.org/oidassociate/1.0/present_token") {
-                res.sendStatus(202)
-                console.log("\n> Register DidComm")
+            const didcomm_msg = await agent.handleMessage({ raw: req.body.toString() })
+            const {type,data,from} = didcomm_msg
+            this.debug(didcomm_msg)
 
-                // Validate Token
-                const access_token:string = (message.data! as any).access_token
-                var result
-                try { result = await verifyJWT(access_token, {resolver: resolvers}) }
-                catch (e) { 
-                    console.log("\n"+red+"< Invalid DidComm Access Token"+end)
-                    this.send_didcomm_msg(message.from!, this.identifier.did, "https://didcomm.org/oidassociate/1.0/reject_token", {"oidtoken": access_token, "reason": (e as Error).message})
-                    return
-                }
+            switch (type) {
+                case "https://didcomm.org/oidassociate/1.0/present_token":
+                    console.log("Token Presentation")
+                    const {oidtoken} = data! as {oidtoken:string}
+                    
+                    // Validate
+                    let reason
+                    const result = await verifyJWT(oidtoken, {resolver:resolvers}).catch((e)=>{})
+                    const stored_scope = this.access_tokens[oidtoken]?.metadata.scope!.split(" ")
+                    if      (!result?.verified)                    reason = "JWT Invalid";
+                    else if (result.issuer != this.identifier.did) reason = "Token not issued by Issuer"
+                    else if (!stored_scope.includes("DidComm"))    reason = "Scope Invalid"
+
+                    if (reason) {
+                        console.error(`<[DidComm] Reject. Reason: ${reason}`)
+                        this.send_didcomm_msg(from!, this.identifier.did, "https://didcomm.org/oidassociate/1.0/reject_token", {"oidtoken": oidtoken, "reason": reason})
+                    }
+                    else {
+                        console.log('<[DidComm] Acknowledge')
+                        this.access_tokens[oidtoken].confirmed_did = from!
+                        this.confirmed_connections[oidtoken] = {did: from!, confirmed_at: Date.now()}
+                        this.send_didcomm_msg(from!, this.identifier.did, "https://didcomm.org/oidassociate/1.0/acknowledge_token", {"oidtoken": oidtoken})
+                    }
+                    break
                 
-                if (
-                    !result.verified || !this.access_tokens[access_token].metadata.scope!.split(" ").includes("DidComm") ||
-                    result.issuer != this.identifier.did
-                ) {
-                    console.log("\n"+red+"< Invalid DidComm Access Token"+end)
-                    this.send_didcomm_msg(message.from!, this.identifier.did, "https://didcomm.org/oidassociate/1.0/reject_token", {"oidtoken": access_token, "reason": "some reason"})
-                    return
-                }
-
-                this.access_tokens[access_token].confirmed_did = message.from!
-                this.confirmed_connections[access_token] = {did: message.from!, confirmed_at: Date.now()}
-                this.send_didcomm_msg(message.from!, this.identifier.did, "https://didcomm.org/oidassociate/1.0/acknowledge_token", {"oidtoken": access_token}, message.id)
-                console.log("< Acknowledge\n")
-            }
-            // Arbitrary DidComm Message
-            else if (message.type == "message") {
-                res.sendStatus(202)
-                console.log("> DidComm Message:", (message.data! as any).message)
-            }
-            else {
-                console.log("\n> Unknown DidComm Message")
-                res.sendStatus(404)
+                case "message": // Arbitrary message
+                    const {message} = data! as {message:string}
+                    console.log(message)
+                    break
+                
+                default:
+                    console.warn(`Unknown Message Type: '${type}'`)
             }
         })
 
