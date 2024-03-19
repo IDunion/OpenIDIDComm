@@ -1,5 +1,8 @@
 # Installation and User Guide
 
+## Background
+The implementation uses a Veramo agent. [Veramo](https://veramo.io) is a JavaScript framework which allows the work with Verifiable Data such as Verifiable Credentials or DIDs. Natively supported DID Methods are did:ethr, did:web and did:key. Veramo is a modular framework which means functionality can be added via plugins such as the [Sphereon OID4VC](https://github.com/Sphereon-Opensource/OID4VCI) or the [DIDComm plugin](https://www.npmjs.com/package/@veramo/did-comm). These two plugins are used in the implementation. The DIDComm plugin implements DIDComm v2 so that the agent can use the protocol for exchanging DIDComm messages. Sphereon implements a VCI client and a VCI issuer on top of the OID4VCI protocol.
+
 ## Pre-conditions
 You need to have Node.JS (currently tested on version 18.17.1)
 
