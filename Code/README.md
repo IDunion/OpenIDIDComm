@@ -19,16 +19,20 @@ To start the Issuer use the following command and confirm the installation of ts
 ```shell
 npx tsx ./issuerCli.ts
 ```
-The programm gives you an interactive interface to use. 
+The programm gives you an interactive interface to use.
+
 ![Issuer Interface](/Code/readmeImages/issuerCliActions.png)
 
 One first needs to create and run the default Issuer. 
+
 ![Run](/Code/readmeImages/start_issuer.png)
 
 Then you can generate an Out-of-Band Offer-URL.
+
 ![Offer](/Code/readmeImages/offer.png)
 
 Finally, after a credential was successfully issued, a DidComm chat can be started with a chosen client.
+
 ![Chat](/Code/readmeImages/chat.png)
 
 ### Client (Wallet)
