@@ -234,9 +234,7 @@ export class IssuerDidToken implements IIssuer {
         })
 
         const port = Number(this.base_url.split(":")[2].split("/")[0])
-        this.server = app.listen(port, () => {
-            console.log("Server listening on port", port, "\n")
-        })
+        this.server = app.listen(port)
     }
 
     public stop_server() {
