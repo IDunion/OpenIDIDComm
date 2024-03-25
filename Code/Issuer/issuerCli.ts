@@ -1,11 +1,11 @@
 import prompts from 'prompts'
 import { agent } from './issuerAgent.js'
-//import { IssuerDidSeparated } from './archive/issuerDidSeparated.js'
+//import { IssuerDidSeparated } from '../archive/issuerDidSeparated.js'
 import { IssuerDidToken } from './issuerDidToken.js'
 import { IDIDCommMessage } from '@veramo/did-comm'
 import qr from "qrcode-terminal"
 import { IIssuer } from './issuerInterface.js'
-//import { IssuerDidJwt } from './archive/issuerDidJwt.js'
+//import { IssuerDidJwt } from '../archive/issuerDidJwt.js'
 
 enum IssuerActions {
     RUN_DEFAULT_ISSUER,

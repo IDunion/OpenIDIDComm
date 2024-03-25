@@ -1,4 +1,4 @@
-import { agent, resolvers } from '../issuerAgent.js'
+import { agent, resolvers } from '../Issuer/issuerAgent.js'
 import { CredentialRequestJwtVc, AccessTokenRequest, AccessTokenResponse, ProofOfPossession, CredentialResponse, CredentialIssuerMetadata, CredentialSupported } from '@sphereon/oid4vci-common'
 import { ICredential } from '@sphereon/ssi-types'
 import express, { Express, Request, Response } from 'express'
@@ -10,7 +10,7 @@ import { Credential } from '@veramo/data-store'
 import * as readline from "readline"
 import { IIdentifier } from '@veramo/core'
 import * as http from "http"
-import { IIssuer } from '../issuerInterface.js'
+import { IIssuer } from '../Issuer/issuerInterface.js'
 
 //terminal farben
 var verbose = false
