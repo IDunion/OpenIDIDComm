@@ -37,6 +37,13 @@ await agent.didManagerAddService({ did: identifier.did, service: { id: "123", ty
 const local_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod", { agent: agent }))[0].kid
 const global_key_id = (await mapIdentifierKeysToDoc(identifier, "assertionMethod", { agent: agent }))[0].meta.verificationMethod.id
 
+console.log(`
++---------------------------------------------------------------------------------------+
+| DID: did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Client |
+| URL: http://localhost:8081                                                            |
++---------------------------------------------------------------------------------------+
+`)
+
 
 /**********/
 /* SERVER */
@@ -47,7 +54,7 @@ const server: Express = express()
 /* TODO: Error handling, but easier to read like this */
 server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Request, res: Response) => {
   res.sendStatus(202)
-  process.stdout.write('>[DidComm] ')
+  process.stdout.write('\n>[DidComm] ')
 
   const didcomm_message = await agent.handleMessage({ raw: req.body.toString() })
   const {type,data} = didcomm_message
@@ -176,7 +183,7 @@ async function main(offer_uri?: string) {
 
     await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "https://didcomm.org/oidassociate/1.0/present_token", { oidtoken: token.access_token })
     outstanding_registrations[token.access_token] = { acknowledge: () => { clearTimeout(timeoutID); res("") } }
-    console.log("\n<[DidComm] Present Token: '"+token.access_token.slice(0,7)+"'")
+    process.stdout.write("\n<[DidComm] Present Token: '"+token.access_token.slice(0,7)+"'")
   }).catch(e => { 
     console.error(red + 'DIDComm Connection failed, aborting OID4VCI flow...' + end)
     return
@@ -231,11 +238,7 @@ async function main(offer_uri?: string) {
     }
     console.log(green + "> Credential:", end, "\n", credential)
 
-    await prompts({
-      type: "text",
-      name: "_",
-      message: "press Enter to quit"
-    })
+    await start_didcomm_chat(client.endpointMetadata.credentialIssuerMetadata!.did)
   }
   else console.log(red + "> Credential Error: ", end, credentialResponse.errorBody)
 }
@@ -267,4 +270,42 @@ async function send_didcomm_msg(to: string, from: string, type: string, body: Ob
   await agent.sendDIDCommMessage({ messageId: message.id, packedMessage: packed_msg, recipientDidUrl: message.to })
 
   return message.id
+}
+
+async function start_didcomm_chat(to:string) {
+  console.log(`
++--------------+
+| DidComm Chat |
++--------------+`
+  )
+
+  while (true) {
+    const text = (await prompts({
+        type: 'text',
+        name: 'message',
+        message: `Enter a message:`
+    })).message as string
+
+    if (text.startsWith('/')) {
+        // Its a command
+        switch (text) {
+            case '/quit':
+            case '/q':
+                return
+            case '/help':
+              console.log(
+                '/help      shows this help dialog\n' +
+                '/q /quit   exit to menu\n'
+              )
+              break
+            default:
+                console.error('Unknown command')
+                break
+        }
+    }
+    else {
+        // Normal Message
+        send_didcomm_msg(to, identifier.did, 'message', { message: text })
+    }
+  }
 }

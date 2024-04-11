@@ -15,9 +15,9 @@ npm install
 ## Usage
 
 ### Issuer
-To start the Issuer use the following command and confirm the installation of tsx if not already done:
+To start the Issuer use the following command from inside the `Code/` directory:
 ```shell
-npx tsx ./issuerCli.ts
+npx tsx Issuer/issuerCli.ts
 ```
 The programm gives you an interactive interface to use.
 
@@ -38,7 +38,7 @@ Finally, after a credential was successfully issued, a DidComm chat can be start
 ### Client (Wallet)
 To start the Client use the following command (with the file name of the prefered solution):
 ```shell
-npx tsx ./clientDidToken.ts
+npx tsx Client/clientDidToken.ts
 ```
 The programm expects you to enter the previously generated offer-url. Afterwards both parties will go through our extended OID4VC flow and the Client will receive a Credential as well as having a DIDComm channel now.
 Any messages send via DIDComm from the Issuer to the Client will be displayed (currently only messages from Issuer to Client are supported)

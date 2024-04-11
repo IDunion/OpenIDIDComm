@@ -70,10 +70,10 @@ async function run_default_issuer() {
     issuers[did].start_server()
 
     console.log(`
-    +---------------------------------------------------------------------------------------+
-    | DID: did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer |
-    | URL: http://localhost:8080                                                            |
-    +---------------------------------------------------------------------------------------+
++---------------------------------------------------------------------------------------+
+| DID: did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer |
+| URL: http://localhost:8080                                                            |
++---------------------------------------------------------------------------------------+
     `)
     /*const response = await prompts({
         type: 'select',
