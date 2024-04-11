@@ -223,9 +223,9 @@ export class IssuerDidToken implements IIssuer {
                     }
                     break
                 
-                case "message": // Arbitrary message
-                    const {message} = data! as {message:string}
-                    console.log(message)
+                case "https://didcomm.org/basicmessage/2.0/message": // basic message
+                    const {content} = data! as {content:string}
+                    console.log(content)
                     break
                 
                 default:
