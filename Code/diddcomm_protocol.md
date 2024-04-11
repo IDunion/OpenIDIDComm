@@ -7,7 +7,9 @@ This protocol plays a small but important part in the overall flow that associat
 ### Roles
 *token_issuer* - Issues the OID access token.
 
-*token_holder* - Receives the OID access token and presents it via this protocol. 
+*token_holder* - Receives the OID access token from the *token_issuer* and presents it via this protocol to the *token_verifier*.
+
+*token_verifier' - Receives the presented OID access token from the *token_holder* and verifies its validity and association with an OID(4VC/VP) flow. The *token_verifier* almost certainly is the *token_issuer*, though it is technically possible, that both roles are represented by different entities.
 
 ### Protocol URI
 
@@ -15,7 +17,7 @@ This protocol plays a small but important part in the overall flow that associat
 
 ### Present Token message
 
-This message is sent by the `token_holder` to present an OID obtained access token to the `token_issuer`.
+This message is sent by the `token_holder` to present an OID obtained access token to the `token_verifier`.
 
 ```json
 {
@@ -30,7 +32,7 @@ This message is sent by the `token_holder` to present an OID obtained access tok
 
 ### Acknowledge Token message
 
-This message acknowledges and an OID obtained access token to the other party. This serves as a confirmation that the token association has been completed and the DIDComm relationship has been associated with the access token obtained via an OID process. 
+This message is sent by the *token_verifier* to the *token_holder* and acknowledges an OID obtained access token. This serves as a confirmation that the token association has been completed and the DIDComm relationship has been associated with the access token obtained via an OID process. 
 
 ```json
 {
@@ -45,7 +47,7 @@ This message acknowledges and an OID obtained access token to the other party. T
 
 ### Token Rejected
 
-This indicates that the token association has not been completed, for a reason indicated in the message.
+This message is sent by the *token_verifier* to the *token_holder* and indicates that the token association has not been completed, for a reason indicated in the message.
 
 ```json
 {
