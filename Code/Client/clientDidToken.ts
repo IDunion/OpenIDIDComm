@@ -72,9 +72,9 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
       console.error(`Presentation failed. Reason: '${reason}'`)
       break
 
-    case "message": // Arbitrary message
-      const {message} = data! as {message:string}
-      console.log(message)
+    case "https://didcomm.org/basicmessage/2.0/message": // Arbitrary message
+      const {content} = data! as {content:string}
+      console.log(content)
       break
 
     case "credential_ready":
@@ -305,7 +305,7 @@ async function start_didcomm_chat(to:string) {
     }
     else {
         // Normal Message
-        send_didcomm_msg(to, identifier.did, 'message', { message: text })
+        send_didcomm_msg(to, identifier.did, 'https://didcomm.org/basicmessage/2.0/message', { content: text })
     }
   }
 }

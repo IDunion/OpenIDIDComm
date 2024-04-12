@@ -186,7 +186,7 @@ async function start_didcomm_chat() {
         }
         else {
             // Normal Message
-            iss.send_didcomm_msg(client_did, issuer_did, 'message', { message: text })
+            iss.send_didcomm_msg(client_did, issuer_did, 'https://didcomm.org/basicmessage/2.0/message', { content: text })
         }
     }
 }
