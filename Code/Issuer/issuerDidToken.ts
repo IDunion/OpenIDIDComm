@@ -120,7 +120,7 @@ export class IssuerDidToken implements IIssuer {
             }
 
             // Enforce DidComm Requirements
-            const supported = (await agent.oid4vciStoreGetMetadata({ correlationId: "123" }))?.credentials_supported[0] as CredentialSupported & { didcommRequired: string }
+            const supported = (await agent.oid4vciStoreGetMetadata({ correlationId: this.store_id }))?.credentials_supported[0] as CredentialSupported & { didcommRequired: string }
 
             if (supported.didcommRequired == "Required") {
                 if (!this.access_tokens[access_token].confirmed_did) {

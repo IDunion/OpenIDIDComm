@@ -68,7 +68,7 @@ const dbConnection = new DataSource({
 
 export const resolvers = new Resolver({ ...keyDidResolver(), ...peerDidResolver(), ...webDidResolver() })
 
-export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & IOID4VCIIssuer & ISIOPv2RP & IOID4VCIStore & IDIDComm & IMessageHandler>({
+export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & IOID4VCIIssuer & IOID4VCIStore & IDIDComm & IMessageHandler>({
   plugins: [
     new KeyManager({
       store: new KeyStore(dbConnection),
@@ -90,50 +90,7 @@ export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataS
     }),
     new CredentialPlugin(),
     new OID4VCIIssuer({ defaultStoreId: "_default", defaultNamespace: "oid4vci", resolveOpts: { resolver: resolvers } }),
-    new OID4VCIStore({
-      importMetadatas: [{
-        metadata: {
-          credential_issuer: "http://localhost:8080",
-          credentials_supported: [Object.defineProperty({ format: "jwt_vc_json", types: ["VerifiableCredential", "UniversityDegreeCredential"] }, "didcommRequired", {value: "Required", enumerable: true})],
-          credential_endpoint: "http://localhost:8080/credentials",
-          token_endpoint: "http://localhost:8080/token",
-          deferred_endpoint: "http://localhost:8080/deferred",
-          did: "did:web:void1042.github.io:web-did-host:issuer"
-        },
-        correlationId: "123"
-      }]
-    }),
-    new SIOPv2RP({
-      defaultOpts: {
-        didOpts: {
-          identifierOpts: {
-            identifier: {
-              "did": "did:web:void1042.github.io:web-did-host:issuer",
-              "controllerKeyId": "5932972c2e8740dcb81daecad3cff781630401659a896a12f4d928d65d044d58",
-              "provider": "did:web",
-              "services": [
-
-              ],
-              "keys": [
-                {
-                  "kid": "5932972c2e8740dcb81daecad3cff781630401659a896a12f4d928d65d044d58",
-                  "type": "Ed25519",
-                  "kms": "local",
-                  "publicKeyHex": "5932972c2e8740dcb81daecad3cff781630401659a896a12f4d928d65d044d58",
-                  "meta": {
-                    "algorithms": [
-                      "EdDSA",
-                      "Ed25519"
-                    ]
-                  }
-                }
-              ],
-              "alias": "void1042.github.io:web-did-host:issuer"
-            }
-          }
-        }
-      }
-    }),
+    new OID4VCIStore({}),
     new MessageHandler({ messageHandlers: [new DIDCommMessageHandler()] }),
     new DIDComm()
   ],
