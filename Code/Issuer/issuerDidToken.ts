@@ -138,54 +138,27 @@ export class IssuerDidToken implements IIssuer {
             var confirmed_did: string | undefined
             if (supported.didcommRequired == "Required") confirmed_did = this.access_tokens[access_token].confirmed_did
 
-            // Automatic Deferall after 3 Seconds
-            let deferal: { "transaction_id": string, "c_nonce": string } | undefined
-            const timeout = setTimeout(() => {
-                deferal = {
-                    "transaction_id": String(Math.random().toString(16).slice(2)),
-                    "c_nonce": String(Math.random().toString(16).slice(2))
-                }
-                this.defered_creds[deferal.transaction_id] = { status: "PENDING", credential: undefined }
-                res.send(deferal)
-                console.log("< Deferral")
-                this.debug(deferal)
-            }, 3000)
-
-            // Build Credential. Respond based on Deferral Timeout
+            // Build Credential
             try {
                 var credential = await this.issue_credential(req.body)
-                clearTimeout(timeout)
             }
             catch (e) {
-                clearTimeout(timeout)
-
-                if (deferal === undefined) {
-                    if ((e as Error).message == "Didcomm timeout") {
-                        res.status(400).json({ error: "didcomm_unreachable" })
-                        console.log(red, "< DidComm Error", end)
-                    }
-                    else {
-                        res.sendStatus(500)
-                        console.log(red, "< Internal Error", end)
-                        this.debug(e)
-                    }
+                if ((e as Error).message == "Didcomm timeout") {
+                    res.status(400).json({ error: "didcomm_unreachable" })
+                    console.log(red, "< DidComm Error", end)
                 }
-                else this.defered_creds[deferal.transaction_id].status = "FAILED"
+                else {
+                    res.sendStatus(500)
+                    console.log(red, "< Internal Error", end)
+                    this.debug(e)
+                }
 
                 return
             }
 
-            if (deferal === undefined) {
-                res.send(credential)
-                console.log(green, "< Credential", end)
-                this.debug(credential)
-            }
-            else {
-                this.defered_creds[deferal.transaction_id].status = "READY"
-                this.defered_creds[deferal.transaction_id].credential = credential
-                if (confirmed_did) await this.send_didcomm_msg(confirmed_did, this.identifier.did, "credential_ready", { transaction_id: deferal.transaction_id })
-                console.log("\n< Credential ready")
-            }
+            res.send(credential)
+            console.log(green, "< Credential", end)
+            this.debug(credential)
         })
 
         // DidComm Endpoint
