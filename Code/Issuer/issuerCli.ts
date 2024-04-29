@@ -64,10 +64,9 @@ async function main() {
 async function run_default_issuer() {
     const did = "did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer"
     const base_url = "http://localhost:8080"
-    const store_id = "1"
+    const store_id = "did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer"
 
-    issuers[did] = await IssuerDidToken.build(did, store_id, base_url)
-    issuers[did].start_server()
+    issuers[did] = await new IssuerDidToken(did, store_id, base_url)
 
     console.log(`
 +---------------------------------------------------------------------------------------+
@@ -123,7 +122,7 @@ async function create_offer(preauth_code: string) {
     // })).value as string
 
     const offer = await agent.oid4vciCreateOfferURI({
-        credentialIssuer: "1",
+        credentialIssuer: "did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer",
         storeId: "_default",
         namespace: "oid4vci",
         grants: { 'urn:ietf:params:oauth:grant-type:pre-authorized_code': { 'pre-authorized_code': preauth_code, user_pin_required: false } }

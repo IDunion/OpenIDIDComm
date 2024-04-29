@@ -1,0 +1,13 @@
+diff --git a/node_modules/@sphereon/oid4vci-issuer-server/dist/oid4vci-api-functions.js b/node_modules/@sphereon/oid4vci-issuer-server/dist/oid4vci-api-functions.js
+index 7913c4b..e3a15c9 100644
+--- a/node_modules/@sphereon/oid4vci-issuer-server/dist/oid4vci-api-functions.js
++++ b/node_modules/@sphereon/oid4vci-issuer-server/dist/oid4vci-api-functions.js
+@@ -56,7 +56,7 @@ function accessTokenEndpoint(router, issuer, opts) {
+         return;
+     }
+     const accessTokenIssuer = (_b = (_a = opts === null || opts === void 0 ? void 0 : opts.accessTokenIssuer) !== null && _a !== void 0 ? _a : process.env.ACCESS_TOKEN_ISSUER) !== null && _b !== void 0 ? _b : issuer.issuerMetadata.credential_issuer;
+-    const preAuthorizedCodeExpirationDuration = (_d = (_c = opts === null || opts === void 0 ? void 0 : opts.preAuthorizedCodeExpirationDuration) !== null && _c !== void 0 ? _c : (0, oid4vci_common_1.getNumberOrUndefined)(process.env.PRE_AUTHORIZED_CODE_EXPIRATION_DURATION)) !== null && _d !== void 0 ? _d : 300;
++    const preAuthorizedCodeExpirationDuration = (_d = (_c = opts === null || opts === void 0 ? void 0 : opts.preAuthorizedCodeExpirationDuration) !== null && _c !== void 0 ? _c : (0, oid4vci_common_1.getNumberOrUndefined)(process.env.PRE_AUTHORIZED_CODE_EXPIRATION_DURATION)) !== null && _d !== void 0 ? _d : 300000;
+     const interval = (_f = (_e = opts === null || opts === void 0 ? void 0 : opts.interval) !== null && _e !== void 0 ? _e : (0, oid4vci_common_1.getNumberOrUndefined)(process.env.INTERVAL)) !== null && _f !== void 0 ? _f : 300;
+     const tokenExpiresIn = (_g = opts === null || opts === void 0 ? void 0 : opts.tokenExpiresIn) !== null && _g !== void 0 ? _g : 300;
+     // todo: this means we cannot sign JWTs or issue access tokens when configured from env vars!

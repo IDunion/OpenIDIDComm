@@ -1,0 +1,35 @@
+diff --git a/node_modules/@sphereon/oid4vci-issuer/dist/VcIssuer.js b/node_modules/@sphereon/oid4vci-issuer/dist/VcIssuer.js
+index a8be869..b0398c9 100644
+--- a/node_modules/@sphereon/oid4vci-issuer/dist/VcIssuer.js
++++ b/node_modules/@sphereon/oid4vci-issuer/dist/VcIssuer.js
+@@ -192,6 +192,9 @@ class VcIssuer {
+                     if (!session) {
+                         throw Error('Either a preAuth or Auth session is required, none found');
+                     }
++                    if ( session.issuerState !== 'DIDCOMM_CONFIRMED' ) {
++                        throw Error('DidComm Connection unconfirmed')
++                    }
+                     const credentialOffer = session.credentialOffer;
+                     if (!credentialOffer) {
+                         throw Error('Credential Offer missing');
+diff --git a/node_modules/@sphereon/oid4vci-issuer/dist/tokens/index.js b/node_modules/@sphereon/oid4vci-issuer/dist/tokens/index.js
+index fe252bd..758674f 100644
+--- a/node_modules/@sphereon/oid4vci-issuer/dist/tokens/index.js
++++ b/node_modules/@sphereon/oid4vci-issuer/dist/tokens/index.js
+@@ -19,7 +19,7 @@ const generateAccessToken = (opts) => __awaiter(void 0, void 0, void 0, function
+     const iat = new Date().getTime() / 1000;
+     const exp = iat + tokenExpiresIn;
+     const jwt = {
+-        header: { typ: 'JWT', alg: alg !== null && alg !== void 0 ? alg : oid4vci_common_1.Alg.ES256K },
++        header: { typ: 'JWT', alg: alg !== null && alg !== void 0 ? alg : oid4vci_common_1.Alg.EdDSA },
+         payload: Object.assign({ iat,
+             exp, iss: accessTokenIssuer }, (preAuthorizedCode && { preAuthorizedCode })),
+     };
+@@ -110,6 +110,7 @@ const createAccessTokenResponse = (request, opts) => __awaiter(void 0, void 0, v
+         c_nonce_expires_in: cNonceExpiresIn,
+         authorization_pending: false,
+         interval,
++        scope: 'UniversityDegreeCredential DidComm'
+     };
+     const credentialOfferSession = yield credentialOfferSessions.getAsserted(preAuthorizedCode);
+     credentialOfferSession.status = oid4vci_common_1.IssueStatus.ACCESS_TOKEN_CREATED;

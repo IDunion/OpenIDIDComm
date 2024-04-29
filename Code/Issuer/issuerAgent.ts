@@ -27,7 +27,6 @@ import { CredentialPlugin } from '@veramo/credential-w3c'
 import { DIDResolverPlugin } from '@veramo/did-resolver'
 import { Resolver } from 'did-resolver'
 import { getResolver as keyDidResolver } from 'key-did-resolver'
-import { getResolver as peerDidResolver } from '@veramo/did-provider-peer'
 import { getResolver as webDidResolver } from 'web-did-resolver'
 
 // Storage plugin using TypeOrm
@@ -36,7 +35,6 @@ import { Entities, KeyStore, DIDStore, PrivateKeyStore, migrations } from '@vera
 // TypeORM is installed with `@veramo/data-store`
 import { DataSource } from 'typeorm'
 import { KeyDIDProvider } from '@veramo/did-provider-key'
-import { PeerDIDProvider } from '@veramo/did-provider-peer'
 import { WebDIDProvider } from '@veramo/did-provider-web'
 
 import { IOID4VCIIssuer, OID4VCIIssuer } from '@sphereon/ssi-sdk.oid4vci-issuer'
@@ -66,7 +64,7 @@ const dbConnection = new DataSource({
 }).initialize()
 
 
-export const resolvers = new Resolver({ ...keyDidResolver(), ...peerDidResolver(), ...webDidResolver() })
+export const resolvers = new Resolver({ ...keyDidResolver(), ...webDidResolver() })
 
 export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & ICredentialPlugin & IOID4VCIIssuer & IOID4VCIStore & IDIDComm & IMessageHandler>({
   plugins: [
@@ -81,7 +79,6 @@ export const agent = createAgent<IDIDManager & IKeyManager & IDataStore & IDataS
       defaultProvider: 'did:peer',
       providers: {
         'did:key': new KeyDIDProvider({ defaultKms: "local" }),
-        'did:peer': new PeerDIDProvider({ defaultKms: "local" }),
         'did:web': new WebDIDProvider({ defaultKms: "local" })
       },
     }),
