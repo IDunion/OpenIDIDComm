@@ -77,17 +77,6 @@ server.post("/didcomm", bodyParser.raw({ type: "text/plain" }), async (req: Requ
       console.log(content)
       break
 
-    case "credential_ready":
-      const {transaction_id} = data! as {transaction_id:string}
-      console.log(`Deferred Credential Ready. Transaction ID: ${transaction_id}`)
-
-      // Get it
-      const response = await fetch("http://localhost:8080/deferred", { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
-      const {credential} = await response.json() as {credential:string}
-      early_resolve(JSON.parse(decodeBase64url(credential.split(".")[1])))
-
-      break
-
     case "opendid4vci-re-offer":
       console.log('Offer Received')
       const {offer} = data! as {offer:string}
@@ -201,41 +190,10 @@ async function main(offer_uri?: string) {
   })
   debug(credentialRequest)
 
-  // Response is either Credential or Deferral
-  type DeferredResponse = { transaction_id: string, c_nonce: string }
-  const credentialResponse = await credentialRequestClient.acquireCredentialsUsingRequest(credentialRequest) as OpenIDResponse<CredentialResponse | DeferredResponse>
+  const credentialResponse = await credentialRequestClient.acquireCredentialsUsingRequest(credentialRequest)
 
   if (credentialResponse.successBody) {
-    if ("transaction_id" in credentialResponse.successBody) {
-      var { transaction_id, c_nonce } = credentialResponse.successBody
-      console.log("> Deferral #" + transaction_id)
-      debug(credentialResponse)
-
-      credential = await new Promise<W3CVerifiableCredential>(async (res, rej) => {
-        let stop = false
-        early_resolve = (val: W3CVerifiableCredential) => { stop = true; res(val) }
-        early_reject = (error: any) => { stop = true; rej(error) }
-
-        while (!stop) {
-          console.log("< Deferral Request")
-          const response = await fetch("http://localhost:8080/deferred", { method: "post", body: JSON.stringify({ transaction_id: transaction_id, c_nonce: c_nonce }), headers: { 'Content-Type': 'application/json' } })
-          if (response.ok) {
-            const data = await response.json() as { credential: string }
-            return res(JSON.parse(decodeBase64url(data.credential.split(".")[1])))
-          }
-          else {
-            const { error } = await response.json() as { error: string }
-            if (error != "issuance_pending") return rej(error)
-            console.log("> Not ready yet")
-          }
-
-          await new Promise(r => setTimeout(r, 10000));
-        }
-      })
-    }
-    else {
-      credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
-    }
+    credential = JSON.parse(decodeBase64url(credentialResponse.successBody?.credential?.split(".")[1]))
     console.log(green + "> Credential:", end, "\n", credential)
 
     await start_didcomm_chat(client.endpointMetadata.credentialIssuerMetadata!.did)
