@@ -1,6 +1,6 @@
 # OpenIDIDComm
 
-The [OpenID4VCI](https://openid.github.io/OpenID4VCI/openid-4-verifiable-credential-issuance-wg-draft.html) and [OpenID4VP](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-wg-draft.html) specifications define protocols for issuance and verification of Verifiable Credentials between Issuer, Wallet, and Verifier extending the commonly used [OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749) protocol. Currently the two OpenID4VCI/VP-Protocols are missing a feature to enable future communication between the involved parties. To add this feature to the OpenID4VCI/VP-Protocols we want to utilize [DIDComm](https://identity.foundation/didcomm-messaging/spec/), a transport agnostic messaging protocol based on Decentralized Identifiers (DIDs). Therefore, the goal of this work is to write an extension for the two OpenID4VCI/VP-Protocols that additionally allows the creation of a DIDComm channel for future communication.
+The [OpenID4VCI](https://openid.github.io/OpenID4VCI/openid-4-verifiable-credential-issuance-wg-draft.html) and [OpenID4VP](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-wg-draft.html) specifications define protocols for issuance and verification of Verifiable Credentials between Issuer, Wallet, and Verifier extending the commonly used [OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749) protocol. Currently the two OpenID4VCI/VP-Protocols are missing a feature to enable future communication between the involved parties. To add this feature to the OpenID4VCI/VP-Protocols we want to utilize [DIDComm](https://identity.foundation/didcomm-messaging/spec/), a transport agnostic messaging protocol based on Decentralized Identifiers (DIDs). Therefore, the goal of this work is to write an extension for the two OpenID4VCI/VP-Protocols that additionally allows the creation of a DIDComm channel for future communication. This repo should function as a proof of concept. Explicitly, it is no final product.
 
 # Onboarding
 
@@ -8,11 +8,11 @@ To familiarize yourself with the topic, it is worth taking a look at the followi
 
 ### OpenID4VC
 
-To understand OpenID4VC, it is helpful to first understand OAuth and OpenID Connect. A look at the official documentations could help:
+To understand OpenID4VC, it is helpful to first understand OAuth 2.0, which is the basis of our work. A look at the official documentations could help:
 
-- [OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749) 
+- [OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749): OAuth 2.0 is an authorization framework that allows third-party applications to access resources on behalf of a user without sharing credentials. It is widely used in modern web and mobile applications. OAuth 2.0 operates through tokens. Users authorize applications to access their resources via an authentication server. The application uses access tokens to access these resources. If the token expires, a refresh token can be used to obtain a new access token without requiring credentials again. 
     - for a brief overview, just have a look at [OAuth 2.0 simplified](https://aaronparecki.com/oauth-2-simplified/)
-- [OpenID Connect](https://openid.net/developers/how-connect-works/)
+
 
 Finally, the [OpenID4VC spec](https://openid.net/sg/openid4vc/specifications/) (OpenID for Verifiable Credentials ) is a standard based on OpenID Connect which can be used to issue and use Verifiable Credentials. One can distinguish OID4CVI and OID4VP. For a better overview, the key concepts of OID4VCI and OID4VP are listed below.
 
