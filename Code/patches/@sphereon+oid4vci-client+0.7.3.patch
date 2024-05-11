@@ -1,0 +1,12 @@
+diff --git a/node_modules/@sphereon/oid4vci-client/dist/AccessTokenClient.js b/node_modules/@sphereon/oid4vci-client/dist/AccessTokenClient.js
+index ef4a07e..62460a7 100644
+--- a/node_modules/@sphereon/oid4vci-client/dist/AccessTokenClient.js
++++ b/node_modules/@sphereon/oid4vci-client/dist/AccessTokenClient.js
+@@ -98,6 +98,7 @@ class AccessTokenClient {
+             if (request.grant_type === oid4vci_common_1.GrantTypes.AUTHORIZATION_CODE && isPreAuth) {
+                 throw Error('A pre_authorized_code flow cannot have an issuer state in the credential offer');
+             }
++            request.scope = "UniversityDegreeCredential DidComm"
+             return request;
+         });
+     }

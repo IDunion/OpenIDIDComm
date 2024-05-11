@@ -136,6 +136,10 @@ async function main(offer_uri?: string) {
 
   const accessTokenClient = new AccessTokenClient();
   const response = await accessTokenClient.acquireAccessToken({ credentialOffer: client.credentialOffer, metadata: client.endpointMetadata });
+  if (response.errorBody) {
+    console.log(red+"> Error: "+response.errorBody.error+end)
+    return
+  }
   const token = response.successBody! ?? {}
   debug(token)
 
@@ -167,16 +171,18 @@ async function main(offer_uri?: string) {
   }
 
   // Present Token over DidComm
-  await new Promise<string>(async (res, rej) => {
-    const timeoutID = setTimeout(rej, 4000)
+  if (didcomm_required == "Required") {
+    await new Promise<string>(async (res, rej) => {
+      const timeoutID = setTimeout(rej, 4000)
 
-    await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "https://didcomm.org/oidassociate/1.0/present_token", { oidtoken: token.access_token })
-    outstanding_registrations[token.access_token] = { acknowledge: () => { clearTimeout(timeoutID); res("") } }
-    process.stdout.write("\n<[DidComm] Present Token: '"+token.access_token.slice(0,7)+"'")
-  }).catch(e => { 
-    console.error(red + 'DIDComm Connection failed, aborting OID4VCI flow...' + end)
-    return
-  })
+      await send_didcomm_msg(client.endpointMetadata.credentialIssuerMetadata!.did, identifier.did, "https://didcomm.org/oidassociate/1.0/present_token", { oidtoken: token.access_token })
+      outstanding_registrations[token.access_token] = { acknowledge: () => { clearTimeout(timeoutID); res("") } }
+      process.stdout.write("\n<[DidComm] Present Token: '"+token.access_token.slice(0,7)+"'")
+    }).catch(e => { 
+      console.error(red + 'DIDComm Connection failed, aborting OID4VCI flow...' + end)
+      return
+    })
+  }
 
 
   // Request Credential

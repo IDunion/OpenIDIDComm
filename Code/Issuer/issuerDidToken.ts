@@ -97,12 +97,20 @@ export class IssuerDidToken implements IIssuer {
             console.log("\n> Token Request")
             this.debug(req.body)
 
-            const token = await this.get_token(req.body)
-            this.access_tokens[token.access_token] = { metadata: token }
-            
-            res.send(token)
-            console.log("< Token")
-            this.debug(token)
+            const {didcommRequired} = (await agent.oid4vciStoreGetMetadata({ correlationId: this.store_id }))?.credentials_supported[0] as CredentialSupported & { didcommRequired: string }
+            if (!req.body.scope?.includes("DidComm") && didcommRequired == "Required") {
+                const error = { error: "invalid_request"}
+                res.status(400).send(error)
+                console.log("< Invalid Scope")
+            }
+            else {
+                const response = await this.get_token(req.body)
+                response.scope = req.body.scope
+                this.access_tokens[response.access_token] = { metadata: response }
+                res.send(response)
+                console.log("< Token")
+                this.debug(response)
+            }
         })
 
         // Credential Endpoint
@@ -235,8 +243,6 @@ export class IssuerDidToken implements IIssuer {
             credentialIssuer: this.store_id,
             expirationDuration: 100000
         })
-
-        response.scope = "UniversityDegreeCredential DidComm"
 
         return response
     }
