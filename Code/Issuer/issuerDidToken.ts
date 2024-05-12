@@ -37,7 +37,7 @@ export class IssuerDidToken implements IIssuer {
     /****************/
     /* Constructors */
     /****************/
-    static async build(did: string, store_id: string, base_url: string) {
+    static async build(did: string, store_id: string, base_url: string, didcomm_requirement: string) {
         const parts = did.split(":")
         const identifier = await agent.didManagerGetOrCreate({
             alias: parts.slice(2).join(":"),
@@ -65,7 +65,7 @@ export class IssuerDidToken implements IIssuer {
         await agent.oid4vciStorePersistMetadata({
             metadata: {
                 credential_issuer: base_url,
-                credentials_supported: [Object.defineProperty({ format: "jwt_vc_json", types: ["VerifiableCredential", "UniversityDegreeCredential"] }, "didcommRequired", { value: "Required", enumerable: true })],
+                credentials_supported: [Object.defineProperty({ format: "jwt_vc_json", types: ["VerifiableCredential", "UniversityDegreeCredential"] }, "didcommRequired", { value: didcomm_requirement, enumerable: true })],
                 credential_endpoint: base_url + "/credentials",
                 token_endpoint: base_url + "/token",
                 deferred_endpoint: base_url + "/deferred",
@@ -98,19 +98,19 @@ export class IssuerDidToken implements IIssuer {
             this.debug(req.body)
 
             const {didcommRequired} = (await agent.oid4vciStoreGetMetadata({ correlationId: this.store_id }))?.credentials_supported[0] as CredentialSupported & { didcommRequired: string }
-            if (!req.body.scope?.includes("DidComm") && didcommRequired == "Required") {
-                const error = { error: "invalid_request"}
+            if (!req.body.scope?.includes("DidComm") && didcommRequired == "Required" || req.body.scope?.includes("DidComm") && didcommRequired == "Not Supported") {
+                const error = { error: "invalid_scope"}
                 res.status(400).send(error)
                 console.log("< Invalid Scope")
+                return
             }
-            else {
-                const response = await this.get_token(req.body)
-                response.scope = req.body.scope
-                this.access_tokens[response.access_token] = { metadata: response }
-                res.send(response)
-                console.log("< Token")
-                this.debug(response)
-            }
+
+            const response = await this.get_token(req.body)
+            response.scope = req.body.scope
+            this.access_tokens[response.access_token] = { metadata: response }
+            res.send(response)
+            console.log("< Token")
+            this.debug(response)
         })
 
         // Credential Endpoint

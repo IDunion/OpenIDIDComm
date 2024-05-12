@@ -65,8 +65,14 @@ async function run_default_issuer() {
     const did = "did:web:raw.githubusercontent.com:IDunion:OpenIDIDComm:main:DID_Documents:Issuer"
     const base_url = "http://localhost:8080"
     const store_id = "1"
+    const didcomm_requirement = (await prompts({
+        type: 'select',
+        name: 'value',
+        message: 'Choose DidComm requirement:',
+        choices: [{title:"Required",value:"Required"}, {title:"Optional",value:"Optional"}, {title:"Not Supported",value:"Not Supported"}]
+    })).value as string
 
-    issuers[did] = await IssuerDidToken.build(did, store_id, base_url)
+    issuers[did] = await IssuerDidToken.build(did, store_id, base_url, didcomm_requirement)
     issuers[did].start_server()
 
     console.log(`
