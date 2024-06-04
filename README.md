@@ -23,13 +23,7 @@ Finally, the [OpenID4VC spec](https://openid.net/sg/openid4vc/specifications/) (
 - **Batch Credential Endpoint**: optional endpoint for the issuance of multiple credentials at once
 - **Deferred Credential Endpoint**: optional endpoint for the deferred issuance of credentials
 
-A brief description of the OID4VCI workflow shows how the protocol works: For each credential, the Wallet sends one Credential Request to the Credential Endpoint. This request is a POST request specifying the `format`, the `proof`, the `credential_identifier` and `credential_response_encryption` in its body. Each issuance can be further described using the following characteristics:
-
-- **Authorization Code Flow vs. Pre-Authorized Code Flow**:  issuer uses end-user authentication at the Authorization endpoint vs. issuer uses out-of-band mechanisms outside of the flow
-- **Same-device vs. Cross-device Credential Offer**: offer is received from the same device the wallet is installed on vs. offer is communicated to wallet 
-- **Wallet initiated vs. Issuer initiated**: request is sent to the issuer directly from the wallet vs. request is sent to the issuer after communication with the issuer
-- **Immediate vs. Deferred**: credential is directly issued vs. credential is issued after time
-
+A brief description of the OID4VCI workflow shows how the protocol works: For each credential, the Wallet sends one Credential Request to the Credential Endpoint. This request is a POST request specifying the `format`, the `proof`, the `credential_identifier` and `credential_response_encryption` in its body. 
 
 #### OID4VP
 
@@ -38,6 +32,20 @@ A brief description of the OID4VCI workflow shows how the protocol works: For ea
 - **Same-Device-Flow**: Authorization Request und Response are passed with redirects between the user’s wallet and the verifier
 - **Cross-Device-Flow**: The Authorization Request of the verifier is rendered as a QR-code which can be scanned by the user using its wallet. 
 
+#### Comparison of the different OpenID flows
+
+One can distinguish two different flows: The **[Authorization Code Flow](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-authorization-code-flow)** and the **Pre-Authorized Code Flow**. One can also distinguish between **immediate and deferred credetial issuance**. The first means that the credential asked for is directly issued and the latter means that the credential is issued after some time. Another possibility to distinguish differend flows is the **same-device vs. the cross-device credential offer**. Either the offer is received from the same device the wallet is installed on or the offer is communicated to the wallet from another device.
+
+##### Authorization Code Flow
+
+The issuer uses end-user authentication at the Authorization endpoint. There are two different versions:
+
+- **Wallet-initiated version**: End-user comes across verifier wallet that wants a credential. If a matching credential is missing, the *wallet selects a credential issuer*.
+- **Issuer-initiated version**: The request is sent to the issuer after the communication with the issuer itself.
+
+##### Pre-authorized Code Flow
+
+The issuer uses out-of-band mechanisms outside of the flow. Before initiating a flow with the wallet, the issuer conducts the steps required to prepare the issuance of credentials. 
 
 ### DIDComm
 
