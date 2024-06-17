@@ -1,6 +1,11 @@
 # Deprecated versions
 During our work we came up with various solutions which are not suitable any longer. This file contains all deprecated ideas and solutions for others to read about.
 
+
+## Comparison of the current solutions
+
+The DIDComm Token solution is the currently prefered solution. Others can be found in the [deprecated Versions](/deprecatedVersions.md).
+
 ## Comparison of the current solutions
 
 ||DID JWT<br/>(without Deferred Credential Endpoint)|DID JWT with Deferred Credential Endpoint|DID JWT with Deferred Credential Endpoint as fallback (mixed)|Separate DIDComm|DIDComm Token|
@@ -34,9 +39,9 @@ Optional:
 - usage of two distinct OpenID-flows resulting in an overhead
 - more synchronisation of states needed
 
-### DID JWT
+### DID JWT with or without Deferred Credential Endpoint/DID JWT with Deferred Credential Endpoint as fallback (mixed)
 
-This solution utilizes "JSON Web Tokens" to pass a DID in the credential request and at the same time proving possession of the key material.
+Each of these solutions utilizes "JSON Web Tokens" to pass a DID in the credential request and at the same time proving possession of the key material.
 
 Required:
 - Solution established additional DIDComm channel
@@ -58,8 +63,9 @@ These solutions could also be applied to OID4VP.
 
 ![OID4VC Diagram](/Diagramme/OID4VP/DID_Proof/vp_did_proof.png)
 
-**Reasons for depracation:**
-- TODO
+**Reasons for deprecation:**
+- usage of tokes preferred
+- need to pass a DIDComm proof manually
 
 ### Separate DIDComm
 
@@ -67,5 +73,6 @@ It is also possible to create a separate DIDComm connection parallel to the usua
 
 ![OID4VC Diagram](/Diagramme/OID4VCI/DIDComm_Separated/didcomm_separated.png)
 
-**Reasons for depracation:**
-- TODO
+**Reasons for deprecation:**
+- overhead due to usage of a one time code
+- security concerns
