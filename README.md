@@ -2,6 +2,14 @@
 
 The [OpenID4VCI](https://openid.github.io/OpenID4VCI/openid-4-verifiable-credential-issuance-wg-draft.html) and [OpenID4VP](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-wg-draft.html) specifications define protocols for issuance and verification of Verifiable Credentials between Issuer, Wallet, and Verifier extending the commonly used [OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749) protocol. Currently the two OpenID4VCI/VP-Protocols are missing a feature to enable future communication between the involved parties. To add this feature to the OpenID4VCI/VP-Protocols we want to utilize [DIDComm](https://identity.foundation/didcomm-messaging/spec/), a transport agnostic messaging protocol based on Decentralized Identifiers (DIDs). Therefore, the goal of this work is to write an extension for the two OpenID4VCI/VP-Protocols that additionally allows the creation of a DIDComm channel for future communication. This repo should function as a proof of concept. Explicitly, it is no final product.
 
+# Use Cases for OpenIDIDComm
+
+There are different use cases in which the combination of the OpenID4VCI/VP-Protocols and DIDComm has advantages. In general, any use case in which the participants benefit from DIDComm can be implemented with our OpenIDIDComm draft. The most obvious use case is the communication between the parties involved after the cedential has been issued. But there are other use cases too:
+
+Imagine you have received a credential from an issuer. If this credential is no longer valid and needs to be revoked or the credential information needs to be renewed, this can be done using a DIDComm channel that has already been set up. If, for example, a student at a university has already set up a DIDComm channel when issuing their Bachelor's credential and later completes their Master's degree, the Master's credential can also be issued directly and the student receives a notification in the DIDComm channel.
+
+A DIDComm channel that is already established can also be useful when issuing batches (i.e. credentials that are issued in batches). If the issuer sends new credentials via the existing DIDComm channel, the issuer can be sure that the issuance of the following credentials will reach the right person.
+
 # Onboarding
 
 To familiarize yourself with the topic, it is worth taking a look at the following sources:
@@ -100,21 +108,6 @@ Another approach uses the OAuth 2.0 inherent concept of [scopes](https://oauth.n
 
 ![OID4VC Diagram DIDComm Token](/Diagramme/OID4VCI/DIDComm_Token/didcomm_token.png)
 
-## Comparison of the current solutions
-
-The DIDComm Token solution is the currently prefered solution. Others can be found in the [deprecated Versions](/deprecatedVersions.md).
-
-||DID JWT with Deferred Credential Endpoint as fallback (mixed)|Separate DIDComm|DIDComm Token :star:|
-|---|---|---|---|
-|Support of both flows (Authorization and Pre-Authorized)|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|Enforced DIDComm Channel|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|Optional DIDComm Channel|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|No DIDComm Channel<br/>(plain OpenID4VC)|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|DIDComm channel creation|Between Credential Request and Credential Response **OR** after Credential Response (deferral)|After Token Response and before Credential Request|After Token Response and before Credential Request|
-|DIDComm Delay/Timeout handling|:heavy_check_mark: - Credential Response (deferral) is sent immediately|:heavy_check_mark: - DIDComm is separate|:heavy_check_mark: - DIDComm is separate|
-|DIDComm Initiator|Issuer|Holder|Holder|
-|Message modification|Credential Request: Body (Header possible)|Credential Request: Header|Access Token: Scope extended|
-|Session correlation|DID JWT in Credential Request +<br>DIDComm Ping with Nonce|DIDComm Ping with Correlation ID +<br>DIDComm Acknowledge and Credential Request with one-time-code|DIDComm Ping with Access Token|
 
 
 ## Further work
