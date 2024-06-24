@@ -6,9 +6,33 @@ The [OpenID4VCI](https://openid.github.io/OpenID4VCI/openid-4-verifiable-credent
 
 There are different use cases in which the combination of the OpenID4VCI/VP-Protocols and DIDComm has advantages. In general, any use case in which the participants benefit from DIDComm can be implemented with our OpenIDIDComm draft. The most obvious use case is the communication between the parties involved after the cedential has been issued. But there are other use cases too:
 
-Imagine you have received a credential from an issuer. If this credential is no longer valid and needs to be revoked or the credential information needs to be renewed, this can be done using a DIDComm channel that has already been set up. If, for example, a student at a university has already set up a DIDComm channel when issuing their Bachelor's credential and later completes their Master's degree, the Master's credential can also be issued directly and the student receives a notification in the DIDComm channel.
+### Crendetial Revocation
+
+Imagine you have received a credential from an issuer. If this credential is no longer valid and needs to be revoked or the credential information needs to be renewed, this can be done using a DIDComm channel that has already been set up. 
+
+### Batch Issuance
 
 A DIDComm channel that is already established can also be useful when issuing batches (i.e. credentials that are issued in batches). If the issuer sends new credentials via the existing DIDComm channel, the issuer can be sure that the issuance of the following credentials will reach the right person.
+
+### Digital Diploma
+
+The End-User clicks on this link for the issuance of a digital diploma and is redirected to a digital Wallet. The Wallet notifies the End-User that a Credential Issuer offered to issue a diploma Credential. The wallet notifies user that an issuer offered the issuance of a credential. The user confirms this and is redirecrted to the issuance service. There the issuance of the digital diploma happens. 
+If a  DIDComm channel is set up when issuing their diploma, and later a student completes their Master's degree, the Master's credential can also be issued directly and the student receives a notification in the DIDComm channel.
+
+### Employer Credential
+
+A user is starting a new job. The employer requests him to upload documents to his portal. Later, the user receives a notification stating that the employee credential is ready to be claimed. He recevies a QR-Code. The user scans this code, which opens the wallet on his smartphone. Meanwhile, the user has received a  message with a transaction Code. After entering it in the wallet, the user confirms the issuance and receives the employee credential in a wallet. With OpenIDIDComm, right now a DIDComm channel would exist between the user and the employer. As soon as there are other work-related credentials ready, the employee recevies a DIDComm message and a credential offer via the channel. No additional work is needed then.
+
+### Criminal Record
+
+The user wants to acquire a digital criminal record. Therefore he must visit the administration's office to request the official criminal record be issued as a credential. After presenting an ID document, the user scans a QR code and is notified that the issuance takes some time.
+
+In the wallet the user notices that the issuance of the digital record is in progress. After a few days, user receives a notification stating that the requested credential was successfully issued. Upon opening the wallet, user is queried about the download and the wallet fetches and saves the new credential. With OpenIDIDComm, there now is a persistent DIDComm channel between the user and the administration's office, which knows the identity of the user due to the initial presentation of the ID document. If another official document is needed, the user can easily request this via a DIDComm message. Then he can recevie the offer for this credential directly via DIDComm and there is no need for him to visit the administration's office once more.
+
+### Wallet-initiated Issuance of a Driving License
+
+There are cases in which a user wants to present a credential which needs to be issued first. Imagine there is a verifier app that is requesting the presentation of a driving license. The user's wallet determines the requested credential type(s) from the presentation request and notifies the user that there is currently no matching credential. The wallet selects an issuer capable of issuing the missing credentials and sends the user to the issuer's website/app/service. Once authenticated and consent is provided, the user is redirected back to the wallet, where the credential is now present. Such credentials often have a limited validity. Before the document's credential becomes invalid, the DIDComm channel established during the issuance can be used to inform the user of this and, if necessary and wanted, send them the new credential directly. 
+
 
 # Onboarding
 
